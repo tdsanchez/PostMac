@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Media Server - Categories</title>
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 100px 40px 40px 40px; background: #f5f5f5; }
+
+		/* Floating Header */
+		.header { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0, 0, 0, 0.1); z-index: 1000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+		.title-section { flex: 1; }
+		h1 { color: #333; margin-bottom: 5px; }
+		.stats { color: #595959; font-size: 14px; }
+
+		.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+		.category-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; text-decoration: none; display: block; color: inherit; }
+		.category-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+		.category-card:focus { outline: 3px solid #007AFF; outline-offset: 2px; transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+		.category-card.selected { box-shadow: 0 0 0 3px #007AFF; transform: translateY(-4px); }
+		.preview { width: 100%; height: 300px; object-fit: cover; background: #eee; display: block; }
+		.preview-icon { width: 100%; height: 300px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 72px; }
+		.preview-placeholder { width: 100%; height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 72px; color: white; position: relative; }
+		.preview-placeholder::after { content: 'Loading...'; position: absolute; bottom: 20px; font-size: 14px; opacity: 0.8; }
+		.category-info { padding: 20px; }
+		.category-name { font-weight: 600; font-size: 20px; margin-bottom: 8px; color: #333; }
+		.category-count { color: #595959; font-size: 16px; }
+		.shutdown-button {
+			background: #FF3B30;
+			color: white;
+			border: none;
+			padding: 12px 20px;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 500;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			transition: background 0.2s, transform 0.1s;
+			box-shadow: 0 2px 4px rgba(255, 59, 48, 0.3);
+		}
+		.shutdown-button:hover {
+			background: #FF2D21;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgba(255, 59, 48, 0.4);
+		}
+		.shutdown-button:active {
+			transform: translateY(0);
+		}
+		.power-icon {
+			font-size: 20px;
+		}
+
+		/* Modal */
+		.modal-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 10000;
+			align-items: center;
+			justify-content: center;
+		}
+		.modal-overlay.show {
+			display: flex;
+		}
+		.modal {
+			background: white;
+			border-radius: 12px;
+			padding: 30px;
+			max-width: 400px;
+			width: 90%;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+		}
+		.modal-title {
+			font-size: 20px;
+			font-weight: 600;
+			margin-bottom: 16px;
+			color: #333;
+		}
+		.modal-message {
+			font-size: 16px;
+			color: #595959;
+			margin-bottom: 24px;
+			line-height: 1.5;
+		}
+		.modal-buttons {
+			display: flex;
+			gap: 12px;
+			justify-content: flex-end;
+		}
+		.modal-button {
+			padding: 10px 20px;
+			border: none;
+			border-radius: 6px;
+			font-size: 15px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: background 0.2s;
+		}
+		.modal-button.cancel {
+			background: #E5E5EA;
+			color: #333;
+		}
+		.modal-button.cancel:hover {
+			background: #D1D1D6;
+		}
+		.modal-button.confirm {
+			background: #FF3B30;
+			color: white;
+		}
+		.modal-button.confirm:hover {
+			background: #FF2D21;
+		}
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="title-section">
+			<h1>🚀 Media Server</h1>
+			<div class="stats">📂 {{.TotalFiles}} files in {{.TotalCategories}} categories</div>
+		</div>
+		<button class="shutdown-button" onclick="showShutdownModal()">
+			<span class="power-icon">⏻</span>
+			<span>Shutdown</span>
+		</button>
+	</div>
+	<div class="gallery">
+		{{range .Previews}}
+		<a href="/view/{{urlEncode .Tag}}?file={{urlEncode .PreviewFile.RelPath}}" class="category-card">
+			{{if or (hasSuffix .PreviewFile.Name ".jpg") (hasSuffix .PreviewFile.Name ".jpeg") (hasSuffix .PreviewFile.Name ".png") (hasSuffix .PreviewFile.Name ".gif") (hasSuffix .PreviewFile.Name ".webp")}}
+				<img src="/file/{{.PreviewFile.RelPath}}" class="preview" alt="{{.Tag}}" loading="lazy">
+			{{else if or (hasSuffix .PreviewFile.Name ".mp4") (hasSuffix .PreviewFile.Name ".mov") (hasSuffix .PreviewFile.Name ".m4v")}}
+				<div class="preview-placeholder lazy-video" data-video-src="/file/{{.PreviewFile.RelPath}}">🎬</div>
+			{{else if hasSuffix .PreviewFile.Name ".pdf"}}
+				<div class="preview-icon">📑</div>
+			{{else if isTextFile .PreviewFile.Name}}
+				<div class="preview-icon">📝</div>
+			{{else if isHTMLFile .PreviewFile.Name}}
+				<div class="preview-icon">🌐</div>
+			{{else if isConvertibleFile .PreviewFile.Name}}
+				<div class="preview-icon">📃</div>
+			{{else}}
+				<div class="preview-icon">📄</div>
+			{{end}}
+			<div class="category-info">
+				<div class="category-name">{{.Tag}}</div>
+				<div class="category-count">{{.Count}} files</div>
+			</div>
+		</a>
+		{{end}}
+	</div>
+
+	<!-- Shutdown Confirmation Modal -->
+	<div class="modal-overlay" id="shutdownModal">
+		<div class="modal">
+			<div class="modal-title">⏻ Shutdown Server</div>
+			<div class="modal-message">Do you really want to quit this media server?</div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideShutdownModal()">Cancel</button>
+				<button class="modal-button confirm" onclick="confirmShutdown()">Shutdown</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// ============================================================================
+		// KEYBOARD NAVIGATION FOR CATEGORY CARDS
+		// ============================================================================
+
+		let categoryCards = [];
+		let selectedCard = null;
+
+		function selectCard(card) {
+			if (selectedCard) {
+				selectedCard.classList.remove('selected');
+			}
+			selectedCard = card;
+			selectedCard.classList.add('selected');
+			selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+
+		// Add keyboard navigation: Arrow keys + Enter
+		document.addEventListener('DOMContentLoaded', function() {
+			categoryCards = Array.from(document.querySelectorAll('.category-card'));
+
+			categoryCards.forEach(card => {
+				// Make cards keyboard-focusable
+				card.setAttribute('tabindex', '0');
+
+				// Click to select
+				card.addEventListener('click', function(e) {
+					// Only select, don't prevent navigation
+					selectCard(this);
+				});
+
+				// Intercept Enter key to navigate to gallery instead of single-file view
+				card.addEventListener('keydown', function(e) {
+					if (e.key === 'Enter') {
+						e.preventDefault(); // Don't follow the href
+
+						// Extract the category tag from the href
+						const href = this.getAttribute('href');
+						const match = href.match(/\/view\/([^?]+)/);
+						if (match) {
+							const category = match[1];
+							// Navigate to gallery view instead
+							window.location.href = '/tag/' + category;
+						}
+					}
+				});
+			});
+
+			// Auto-select first card for immediate keyboard navigation
+			if (categoryCards.length > 0) {
+				selectCard(categoryCards[0]);
+			}
+		});
+
+		// Global keyboard handler for arrow navigation
+		document.addEventListener('keydown', function(e) {
+			if (!selectedCard) return;
+
+			const currentIndex = categoryCards.indexOf(selectedCard);
+
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				const nextIndex = (currentIndex + 1) % categoryCards.length;
+				selectCard(categoryCards[nextIndex]);
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				const prevIndex = (currentIndex - 1 + categoryCards.length) % categoryCards.length;
+				selectCard(categoryCards[prevIndex]);
+			}
+		});
+
+		// Lazy loading for videos using Intersection Observer
+		const videoObserver = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const placeholder = entry.target;
+					const videoSrc = placeholder.dataset.videoSrc;
+
+					// Create video element
+					const video = document.createElement('video');
+					video.src = videoSrc;
+					video.className = 'preview';
+					video.controls = true;
+					video.muted = true;
+
+					// Replace placeholder with actual video
+					placeholder.replaceWith(video);
+
+					// Stop observing this element
+					videoObserver.unobserve(placeholder);
+				}
+			});
+		}, {
+			rootMargin: '50px' // Start loading 50px before entering viewport
+		});
+
+		// Observe all lazy video placeholders
+		document.querySelectorAll('.lazy-video').forEach(placeholder => {
+			videoObserver.observe(placeholder);
+		});
+
+		// ============================================================================
+		// SHUTDOWN MODAL AND FUNCTIONALITY
+		// ============================================================================
+
+		function showShutdownModal() {
+			document.getElementById('shutdownModal').classList.add('show');
+		}
+
+		function hideShutdownModal() {
+			document.getElementById('shutdownModal').classList.remove('show');
+		}
+
+		async function confirmShutdown() {
+			try {
+				const response = await fetch('/api/shutdown', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+
+				if (response.ok) {
+					// Update modal to show shutdown message
+					const modal = document.querySelector('.modal');
+					modal.innerHTML = `
+						<div class="modal-title">👋 Shutting Down</div>
+						<div class="modal-message">Media server is shutting down...</div>
+					`;
+
+					// Give server time to shutdown, then close window
+					setTimeout(() => {
+						window.close();
+					}, 2000);
+				} else {
+					alert('Failed to shutdown server. Please try again.');
+					hideShutdownModal();
+				}
+			} catch (error) {
+				console.error('Error shutting down server:', error);
+				// Server already shutdown - update UI
+				const modal = document.querySelector('.modal');
+				modal.innerHTML = `
+					<div class="modal-title">✅ Server Stopped</div>
+					<div class="modal-message">Media server has been shut down.</div>
+				`;
+				setTimeout(() => {
+					window.close();
+				}, 1500);
+			}
+		}
+
+		// Close modal when clicking outside of it
+		document.getElementById('shutdownModal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				hideShutdownModal();
+			}
+		});
+
+		// ESC key to close modal
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				hideShutdownModal();
+			}
+		});
+	</script>
+</body>
+</html>

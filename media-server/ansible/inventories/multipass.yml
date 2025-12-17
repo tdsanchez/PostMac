@@ -1,0 +1,30 @@
+---
+all:
+  vars:
+    deployment_type: multipass
+    service_manager: systemd
+    binary_path: /opt/media-server/media-server
+    media_dir: /mnt/media
+    cache_dir: /var/lib/media-server/cache
+    port: 8080
+
+  children:
+    media_servers:
+      hosts:
+        media-server-1:
+          ansible_host: "{{ lookup('pipe', 'multipass info media-server-1 --format json | jq -r \".info[\\\"media-server-1\\\"].ipv4[0]\"') }}"
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+        # media-server-2:
+        #   ansible_host: "{{ lookup('pipe', 'multipass info media-server-2 --format json | jq -r \".info[\\\"media-server-2\\\"].ipv4[0]\"') }}"
+        #   ansible_user: ubuntu
+        # media-server-3:
+        #   ansible_host: "{{ lookup('pipe', 'multipass info media-server-3 --format json | jq -r \".info[\\\"media-server-3\\\"].ipv4[0]\"') }}"
+        #   ansible_user: ubuntu
+
+    load_balancers:
+      hosts:
+        media-lb:
+          ansible_host: "{{ lookup('pipe', 'multipass info media-lb --format json | jq -r \".info[\\\"media-lb\\\"].ipv4[0]\"') }}"
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa

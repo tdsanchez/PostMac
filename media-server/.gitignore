@@ -1,0 +1,28 @@
+# Binaries
+/media-server
+*.exe
+
+# macOS
+.DS_Store
+
+# Session documentation (can be tracked separately if needed)
+*_SESSION_TRANSCRIPT.txt
+
+# Temporary files
+*.tmp
+*.log
+
+# Backup files
+*.backup
+*.backup[0-9]
+*.backup[0-9][0-9]
+
+# Debug and note files
+debug_*.sh
+*notes.txt
+bugnotes.txt
+
+# IMPORTANT: Always track template files
+!*.html
+!*.js
+.media-server-cache.db*

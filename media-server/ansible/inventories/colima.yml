@@ -1,0 +1,33 @@
+---
+all:
+  vars:
+    deployment_type: colima
+    container_runtime: docker
+    image_name: media-server
+    image_tag: latest
+    media_dir: /data/media
+    cache_dir: /data/cache
+    port: 8080
+
+  children:
+    media_servers:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_python_interpreter: /usr/bin/python3
+
+      vars:
+        # Container-specific variables
+        container_name_prefix: media-server
+        replicas: 3
+        network_name: media-net
+
+    load_balancers:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_python_interpreter: /usr/bin/python3
+
+      vars:
+        lb_container_name: media-lb
+        lb_port: 80

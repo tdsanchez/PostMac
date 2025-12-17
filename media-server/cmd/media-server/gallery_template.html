@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{{.Tag}} - Media Server</title>
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 80px 40px 40px 40px; background: #f5f5f5; }
+
+		/* Floating Header */
+		.floating-header { position: fixed; top: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0, 0, 0, 0.1); z-index: 999; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+		.floating-header-content { display: flex; justify-content: space-between; align-items: center; padding: 12px 40px; max-width: 100%; }
+		.header-left { display: flex; align-items: center; gap: 20px; flex: 1; }
+		.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #595959; }
+		.breadcrumb-item { color: #007AFF; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+		.breadcrumb-item:hover { color: #0051D5; text-decoration: underline; }
+		.breadcrumb-item:focus { outline: 3px solid #007AFF; outline-offset: 2px; border-radius: 4px; }
+		.breadcrumb-separator { color: #999; user-select: none; }
+		.breadcrumb-current { color: #333; font-weight: 600; }
+		.file-count { color: #595959; font-size: 14px; margin-left: 10px; }
+
+		/* Header Buttons Container */
+		.header-buttons { display: flex; gap: 10px; align-items: center; }
+
+		/* Shutdown Button */
+		.shutdown-button { background: #FF3B30; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.2s, transform 0.1s; box-shadow: 0 2px 4px rgba(255, 59, 48, 0.3); }
+		.shutdown-button:hover { background: #FF2D21; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 59, 48, 0.4); }
+		.shutdown-button:active { transform: translateY(0); }
+		.power-icon { font-size: 16px; }
+
+		/* Rescan Button with animated states */
+		.rescan-button { background: #FF6B47; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.8s ease; box-shadow: 0 2px 4px rgba(255, 107, 71, 0.3); position: relative; overflow: hidden; }
+		.rescan-button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 107, 71, 0.4); }
+		.rescan-button:active { transform: translateY(0); }
+		.rescan-button.scanning { background: #FFA500; cursor: wait; animation: pulse 1.5s ease-in-out infinite; }
+		.rescan-button.completed { background: #34C759; box-shadow: 0 2px 4px rgba(52, 199, 89, 0.5); }
+		.rescan-icon { font-size: 16px; transition: transform 0.8s ease; }
+		.rescan-button.scanning .rescan-icon { animation: rotate 2s linear infinite; }
+
+		@keyframes pulse {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.7; }
+		}
+
+		@keyframes rotate {
+			from { transform: rotate(0deg); }
+			to { transform: rotate(360deg); }
+		}
+
+		/* Modal */
+		.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center; }
+		.modal-overlay.show { display: flex; }
+		.modal { background: white; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+		.modal-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; color: #333; }
+		.modal-message { font-size: 16px; color: #595959; margin-bottom: 24px; line-height: 1.5; }
+		.modal-buttons { display: flex; gap: 12px; justify-content: flex-end; }
+		.modal-button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+		.modal-button.cancel { background: #E5E5EA; color: #333; }
+		.modal-button.cancel:hover { background: #D1D1D6; }
+		.modal-button.confirm { background: #FF3B30; color: white; }
+		.modal-button.confirm:hover { background: #FF2D21; }
+
+		h1 { color: #333; margin-bottom: 10px; }
+		.back { display: inline-block; margin-bottom: 20px; color: #007AFF; text-decoration: none; font-weight: 500; }
+		.back:hover { text-decoration: underline; }
+		.back:focus { outline: 3px solid #007AFF; outline-offset: 2px; border-radius: 4px; }
+		.hint { color: #595959; font-size: 15px; margin-bottom: 20px; line-height: 1.5; }
+		.selection-info { position: fixed; top: 80px; right: 20px; background: rgba(0,122,255,0.9); color: white; padding: 14px 22px; border-radius: 8px; font-size: 16px; display: none; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+		.selection-info.active { display: block; }
+		.sort-indicator { position: fixed; top: 80px; left: 20px; background: rgba(52,199,89,0.9); color: white; padding: 14px 22px; border-radius: 8px; font-size: 16px; display: none; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-weight: 600; }
+		.sort-indicator.active { display: block; animation: fadeIn 0.3s ease; }
+		@keyframes fadeIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+		.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+		.item, .folder-item { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; position: relative; }
+		.item:hover, .folder-item:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+		.item:focus, .folder-item:focus { outline: 3px solid #007AFF; outline-offset: 2px; transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+		.item.selected { box-shadow: 0 0 0 3px #007AFF; transform: translateY(-4px); }
+		.item.multi-selected { box-shadow: 0 0 0 4px #FF9500; transform: translateY(-4px); }
+		.item.multi-selected::before { content: '✓'; position: absolute; top: 10px; right: 10px; background: #FF9500; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; z-index: 10; }
+		.preview { width: 100%; height: 300px; object-fit: cover; background: #eee; display: block; }
+		.preview-icon { width: 100%; height: 300px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 72px; }
+		.preview-placeholder { width: 100%; height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 72px; color: white; position: relative; }
+		.preview-placeholder::after { content: 'Loading...'; position: absolute; bottom: 20px; font-size: 14px; opacity: 0.8; }
+		.info { padding: 15px; }
+		.filename { font-weight: 500; margin-bottom: 10px; word-break: break-word; color: #333; font-size: 16px; }
+		.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+		.tag { display: inline-block; padding: 6px 12px; background: #007AFF; color: white; border-radius: 12px; font-size: 14px; text-decoration: none; transition: background 0.2s; min-height: 24px; line-height: 20px; }
+		.tag:hover { background: #0051D5; }
+		.tag:focus { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #007AFF; }
+		.tag.current { background: #34C759; }
+		.tag-input-container { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+		.tag-input-container.active { display: block; }
+		.tag-input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+		.tag-input:focus { outline: none; border-color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
+		.autocomplete { background: white; border: 1px solid #ddd; border-radius: 6px; margin-top: 5px; max-height: 150px; overflow-y: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+		.autocomplete-item { padding: 10px 14px; cursor: pointer; font-size: 15px; min-height: 44px; display: flex; align-items: center; }
+		.autocomplete-item:hover { background: #f5f5f5; }
+		.autocomplete-item.selected { background: rgba(0,122,255,0.2); }
+		.context-menu { position: fixed; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 4px 0; display: none; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 200px; }
+		.context-menu-item { padding: 12px 18px; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 10px; min-height: 44px; }
+		.context-menu-item:hover { background: #f5f5f5; }
+		.notification { position: fixed; top: 20px; right: 20px; background: rgba(52,199,89,0.9); padding: 14px 22px; border-radius: 8px; font-size: 16px; display: none; z-index: 2000; color: white; }
+		.notification.show { display: block; animation: slideIn 0.3s ease; }
+		@keyframes slideIn { from { transform: translateX(400px); } to { transform: translateX(0); } }
+		.comment-container { margin-top: 8px; padding: 6px 10px; background: rgba(0, 0, 0, 0.05); border-radius: 6px; min-height: 28px; }
+		.comment-display { color: #595959; font-size: 13px; cursor: pointer; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+		.comment-display:hover { color: #333; background: rgba(0, 0, 0, 0.03); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
+		.comment-display.empty { color: #999; font-style: italic; }
+		.comment-display.empty:before { content: "Click to add comment..."; }
+		.comment-edit { width: 100%; min-height: 60px; background: #fff; color: #333; border: 2px solid #007AFF; border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box; }
+		.comment-edit:focus { outline: none; border-color: #0051D5; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
+		.comment-saving { opacity: 0.6; pointer-events: none; }
+		.os-path-info { margin-left: 20px; padding-left: 20px; border-left: 1px solid #ddd; color: #595959; font-size: 13px; display: flex; align-items: center; gap: 8px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; }
+		.os-path-text { padding: 4px 8px; background: rgba(0,0,0,0.05); border-radius: 4px; color: #595959; }
+
+		/* Pagination */
+		.pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 40px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+		.pagination-btn { padding: 10px 16px; background: #007AFF; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500; transition: background 0.2s, transform 0.1s; text-decoration: none; display: inline-block; min-height: 44px; display: flex; align-items: center; }
+		.pagination-btn:hover { background: #0051D5; transform: translateY(-1px); }
+		.pagination-btn:active { transform: translateY(0); }
+		.pagination-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; opacity: 0.5; }
+		.pagination-info { color: #595959; font-size: 15px; font-weight: 500; padding: 0 15px; }
+		.pagination-jump { display: flex; align-items: center; gap: 8px; }
+		.pagination-jump input { width: 60px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; text-align: center; }
+		.pagination-jump input:focus { outline: none; border-color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
+		.pagination-limit { display: flex; align-items: center; gap: 8px; margin-left: 15px; }
+		.pagination-limit select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; cursor: pointer; }
+		.pagination-limit select:focus { outline: none; border-color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
+	</style>
+</head>
+<body>
+	<!-- Floating Header -->
+	<div class="floating-header">
+		<div class="floating-header-content">
+			<div class="header-left">
+				<nav class="breadcrumb">
+					<a href="/" class="breadcrumb-item">🏠 Home</a>
+					<span class="breadcrumb-separator">›</span>
+					{{$segments := parseFolderBreadcrumbs .Tag}}
+					{{range $i, $segment := $segments}}
+						{{if gt $i 0}}<span class="breadcrumb-separator">›</span>{{end}}
+						{{if eq $i (len $segments | add -1)}}
+							<span class="breadcrumb-current">{{$segment.Label}}</span>
+						{{else}}
+							<a href="{{$segment.URL}}" class="breadcrumb-item">{{$segment.Label}}</a>
+						{{end}}
+					{{end}}
+				</nav>
+				<span class="file-count">
+					{{if gt .TotalPages 1}}
+						Showing {{.StartIdx}}-{{.EndIdx}} of {{.TotalFiles}} files (Page {{.Page}}/{{.TotalPages}})
+					{{else}}
+						{{.TotalFiles}} files
+					{{end}}
+				</span>
+				{{if .Files}}
+				<span class="os-path-info">
+					<span class="os-path-text">{{index .Files 0 | getDir}}</span>
+				</span>
+				{{end}}
+			</div>
+			<div class="header-buttons">
+				<button class="rescan-button" id="rescanButton" onclick="triggerRescan()">
+					<span class="rescan-icon">🔄</span>
+					<span id="rescanText">Rescan</span>
+				</button>
+				<button class="shutdown-button" onclick="showShutdownModal()">
+					<span class="power-icon">⏻</span>
+					<span>Shutdown</span>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Main Content -->
+	<div class="hint">Arrow keys: navigate • Space: toggle selection • T: add tags • C: edit comment • Enter: view • Cmd/Ctrl+Click: multi-select • L: love • 1-5: stars • <span id="sort-hint">S: sort [name]</span></div>
+	<div class="selection-info" id="selection-info">0 items selected</div>
+	<div class="sort-indicator" id="sort-indicator">📝 SORT: NAME</div>
+
+	<!-- Subfolders Section -->
+	{{if .ChildFolders}}
+	<div style="margin-bottom: 30px;">
+		<h2 style="color: #333; font-size: 18px; font-weight: 600; margin-bottom: 15px; padding-left: 5px;">📁 Subfolders</h2>
+		<div class="gallery">
+			{{range .ChildFolders}}
+			<a href="/tag/{{urlEncode .Path}}" class="folder-item" style="text-decoration: none; color: inherit;">
+				<div class="preview-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">📁</div>
+				<div class="info">
+					<div class="filename">{{.Name}}</div>
+					<div style="color: #595959; font-size: 14px; margin-top: 5px;">{{.Count}} files</div>
+				</div>
+			</a>
+			{{end}}
+		</div>
+	</div>
+	{{end}}
+
+	<!-- Files Section -->
+	{{if .Files}}
+	<h2 style="color: #333; font-size: 18px; font-weight: 600; margin-bottom: 15px; padding-left: 5px;">📄 Files</h2>
+	{{end}}
+	<div class="gallery" id="files-gallery">
+		{{range $index, $file := .Files}}
+		<div class="item" data-index="{{$index}}" data-filepath="{{$file.RelPath}}" data-comment="{{$file.Comment}}" data-name="{{$file.Name}}" data-created="{{$file.Created.Unix}}" data-size="{{$file.Size}}" tabindex="0">
+			<div class="preview-wrapper">
+				{{if or (hasSuffix $file.Name ".jpg") (hasSuffix $file.Name ".jpeg") (hasSuffix $file.Name ".png") (hasSuffix $file.Name ".gif") (hasSuffix $file.Name ".webp")}}
+					<img src="/file/{{$file.RelPath}}" class="preview" alt="{{$file.Name}}" loading="lazy">
+				{{else if or (hasSuffix $file.Name ".mp4") (hasSuffix $file.Name ".mov") (hasSuffix $file.Name ".m4v")}}
+					<div class="preview-placeholder lazy-video" data-video-src="/file/{{$file.RelPath}}">🎬</div>
+				{{else if hasSuffix $file.Name ".pdf"}}
+					<div class="preview-icon">📑</div>
+				{{else if isTextFile $file.Name}}
+					<div class="preview-icon">📝</div>
+				{{else if isHTMLFile $file.Name}}
+					<div class="preview-icon">🌐</div>
+				{{else if isConvertibleFile $file.Name}}
+					<div class="preview-icon">📃</div>
+				{{else}}
+					<div class="preview-icon">📄</div>
+				{{end}}
+			</div>
+			<div class="info">
+				<div class="filename">{{$file.Name}}</div>
+				<div class="tags tags-display">
+					{{if $file.Tags}}
+						{{range $file.Tags}}
+						<a href="/tag/{{urlEncode .}}" class="tag{{if eq . $.Tag}} current{{end}}" data-tag="{{.}}" onclick="event.stopPropagation()">{{.}}</a>
+						{{end}}
+					{{else}}
+						<span style="color: #737373; font-size: 14px;">No tags</span>
+					{{end}}
+				</div>
+				<div class="tag-input-container">
+					<input type="text" class="tag-input" placeholder="Type tag and press Enter (ESC to close)...">
+					<div class="autocomplete"></div>
+				</div>
+				<div class="comment-container">
+					<div class="comment-display{{if not $file.Comment}} empty{{end}}">{{$file.Comment}}</div>
+					<textarea class="comment-edit" style="display:none;"></textarea>
+				</div>
+			</div>
+		</div>
+		{{end}}
+	</div>
+
+	<!-- Pagination Controls -->
+	{{if gt .TotalPages 1}}
+	<div class="pagination">
+		<a href="/tag/{{urlEncode .Tag}}?page={{if gt .Page 1}}{{sub .Page 1}}{{else}}1{{end}}&limit={{.Limit}}"
+		   class="pagination-btn {{if eq .Page 1}}disabled{{end}}"
+		   {{if eq .Page 1}}onclick="return false;"{{end}}>
+			« Previous
+		</a>
+
+		<div class="pagination-info">
+			Page {{.Page}} of {{.TotalPages}}
+		</div>
+
+		<a href="/tag/{{urlEncode .Tag}}?page={{if lt .Page .TotalPages}}{{add .Page 1}}{{else}}{{.TotalPages}}{{end}}&limit={{.Limit}}"
+		   class="pagination-btn {{if eq .Page .TotalPages}}disabled{{end}}"
+		   {{if eq .Page .TotalPages}}onclick="return false;"{{end}}>
+			Next »
+		</a>
+
+		<div class="pagination-jump">
+			<span style="color: #595959;">Go to:</span>
+			<form action="/tag/{{urlEncode .Tag}}" method="get" style="display: flex; gap: 8px; align-items: center;">
+				<input type="number" name="page" min="1" max="{{.TotalPages}}" value="{{.Page}}" required>
+				<input type="hidden" name="limit" value="{{.Limit}}">
+				<button type="submit" class="pagination-btn" style="padding: 8px 12px;">Go</button>
+			</form>
+		</div>
+
+		<div class="pagination-limit">
+			<span style="color: #595959;">Per page:</span>
+			<select onchange="window.location.href='/tag/{{urlEncode .Tag}}?page=1&limit='+this.value">
+				<option value="100" {{if eq .Limit 100}}selected{{end}}>100</option>
+				<option value="200" {{if eq .Limit 200}}selected{{end}}>200</option>
+				<option value="500" {{if eq .Limit 500}}selected{{end}}>500</option>
+				<option value="1000" {{if eq .Limit 1000}}selected{{end}}>1000</option>
+			</select>
+		</div>
+	</div>
+	{{end}}
+
+	<div class="notification" id="notification"></div>
+	<div class="context-menu" id="context-menu">
+		<div class="context-menu-item" id="menu-goto">
+			<span>🔗</span> Go to Tag Gallery
+		</div>
+		<div class="context-menu-item" id="menu-delete">
+			<span>🗑️</span> Delete Tag
+		</div>
+	</div>
+
+	<script>
+		const currentCategory = '{{.Tag}}';
+		let allTags = [];
+		let selectedItem = null;
+		let multiSelectedItems = new Set();
+		let contextMenuTag = null;
+		let currentEditingComment = null;
+		let items = [];
+
+		// Initialize items array after DOM is loaded - only from files gallery
+		async function initializeItems() {
+			const filesGallery = document.getElementById('files-gallery');
+			if (filesGallery) {
+				items = Array.from(filesGallery.querySelectorAll('.item'));
+			}
+
+			// Cache FULL file list in localStorage for viewer performance
+			// Fetch complete category from API instead of just current page DOM
+			if (currentCategory) {
+				try {
+					// Fetch full file list from API endpoint
+					const response = await fetch('/api/filelist?category=' + encodeURIComponent(currentCategory));
+
+					if (response.ok) {
+						const allFilePaths = await response.json();
+						const cacheKey = 'fileList_' + currentCategory;
+						const timestampKey = 'fileList_timestamp_' + currentCategory;
+
+						localStorage.setItem(cacheKey, JSON.stringify(allFilePaths));
+						localStorage.setItem(timestampKey, Date.now().toString());
+
+						console.log(`✅ Cached ${allFilePaths.length} files for category "${currentCategory}"`);
+					} else {
+						console.warn('⚠️ Failed to fetch full file list from API, falling back to current page');
+						// Fallback: cache current page only (previous behavior)
+						if (items.length > 0) {
+							const filePaths = items.map(item => item.dataset.filepath);
+							localStorage.setItem('fileList_' + currentCategory, JSON.stringify(filePaths));
+						}
+					}
+				} catch (e) {
+					console.warn('⚠️ Error fetching file list, falling back to current page:', e);
+					// Fallback: cache current page only (previous behavior)
+					try {
+						if (items.length > 0) {
+							const filePaths = items.map(item => item.dataset.filepath);
+							localStorage.setItem('fileList_' + currentCategory, JSON.stringify(filePaths));
+						}
+					} catch (fallbackErr) {
+						console.error('❌ Failed to cache file list:', fallbackErr);
+					}
+				}
+			}
+
+			// Attach click handlers to all items
+			items.forEach(item => {
+				item.addEventListener('click', function(e) {
+					// If clicking on a tag or tag input, ignore
+					if (e.target.closest('.tag') || e.target.closest('.tag-input-container')) {
+						return;
+					}
+
+					// If clicking on the preview (image/video/icon), navigate immediately
+					if (e.target.closest('.preview-wrapper') || e.target.classList.contains('preview') ||
+					    e.target.classList.contains('preview-icon') || e.target.classList.contains('preview-placeholder') ||
+					    e.target.classList.contains('lazy-video')) {
+						// Select first, then navigate
+						selectItem(this);
+						navigateToView();
+						return;
+					}
+
+					// Clicking on info area (filename, comment, etc.)
+					if (e.metaKey || e.ctrlKey) {
+						// Cmd+Click: toggle multi-select AND move selected indicator
+						toggleMultiSelect(this);
+						selectItem(this);
+					} else {
+						// Regular click: just select
+						selectItem(this);
+					}
+				});
+
+				item.addEventListener('dblclick', function(e) {
+					// Keep double-click as backup navigation method
+					if (!e.target.closest('.tag') && !e.target.closest('.tag-input-container')) {
+						navigateToView();
+					}
+				});
+
+				// Attach tag context menu listeners
+				attachTagListeners(item);
+			});
+
+			// Auto-select first item for immediate keyboard navigation
+			if (items.length > 0) {
+				selectItem(items[0]);
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', initializeItems);
+
+		const starRatings = {
+			'1': '1-★',
+			'2': '2-★★',
+			'3': '3-★★★',
+			'4': '4-★★★★',
+			'5': '5-★★★★★'
+		};
+
+		// Sort state
+		let sortMode = 'name'; // 'name', 'date', 'size', 'random', 'reverse-random'
+		let sortReversed = false;
+		let randomOrder = []; // Store the random shuffle order
+
+		function shuffleArray(array) {
+			// Fisher-Yates shuffle algorithm
+			const shuffled = [...array];
+			for (let i = shuffled.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+			}
+			return shuffled;
+		}
+
+		function sortItems() {
+			const gallery = document.getElementById('files-gallery');
+			if (!gallery) return;
+			const itemsArray = Array.from(gallery.querySelectorAll('.item'));
+
+			if (sortMode === 'random') {
+				// Generate new random order if we don't have one
+				if (randomOrder.length === 0) {
+					randomOrder = shuffleArray(itemsArray);
+				}
+				// Apply the random order
+				gallery.innerHTML = '';
+				randomOrder.forEach(item => gallery.appendChild(item));
+			} else if (sortMode === 'reverse-random') {
+				// Use reverse of the random order
+				if (randomOrder.length === 0) {
+					randomOrder = shuffleArray(itemsArray);
+				}
+				gallery.innerHTML = '';
+				[...randomOrder].reverse().forEach(item => gallery.appendChild(item));
+			} else {
+				// Standard sorting for name, date, size
+				itemsArray.sort((a, b) => {
+					let result = 0;
+
+					if (sortMode === 'name') {
+						result = a.dataset.name.localeCompare(b.dataset.name);
+					} else if (sortMode === 'date') {
+						const aDate = parseInt(a.dataset.created);
+						const bDate = parseInt(b.dataset.created);
+						result = bDate - aDate; // Newest first
+					} else if (sortMode === 'size') {
+						const aSize = parseInt(a.dataset.size);
+						const bSize = parseInt(b.dataset.size);
+						result = bSize - aSize; // Largest first
+					}
+
+					return sortReversed ? -result : result;
+				});
+
+				// Clear the gallery and re-append in sorted order
+				gallery.innerHTML = '';
+				itemsArray.forEach(item => gallery.appendChild(item));
+			}
+		}
+
+		function updateSortHint() {
+			const hint = document.getElementById('sort-hint');
+			const modeLabels = {
+				'name': 'name',
+				'date': 'date',
+				'size': 'size',
+				'random': 'random',
+				'reverse-random': 'reverse-random'
+			};
+			let text = 'S: sort [' + modeLabels[sortMode];
+			if (sortReversed && (sortMode === 'name' || sortMode === 'date' || sortMode === 'size')) {
+				text += ' ↓';
+			} else if (!sortReversed && (sortMode === 'name' || sortMode === 'date' || sortMode === 'size')) {
+				text += ' ↑';
+			}
+			text += ']';
+			hint.textContent = text;
+		}
+
+		function showSortIndicator() {
+			const indicator = document.getElementById('sort-indicator');
+			const modeLabels = {
+				'name': '📝 SORT: NAME',
+				'date': '📅 SORT: DATE',
+				'size': '📏 SORT: SIZE',
+				'random': '🎲 SORT: RANDOM',
+				'reverse-random': '🔄 SORT: REVERSE-RANDOM'
+			};
+
+			let label = modeLabels[sortMode];
+			if (sortReversed && (sortMode === 'name' || sortMode === 'date' || sortMode === 'size')) {
+				label += ' (REVERSED)';
+			}
+
+			indicator.textContent = label;
+			indicator.classList.add('active');
+
+			// Auto-hide after 2 seconds
+			setTimeout(() => {
+				indicator.classList.remove('active');
+			}, 2000);
+
+			// Update persistent hint
+			updateSortHint();
+		}
+
+		fetch('/api/alltags')
+			.then(r => r.json())
+			.then(tags => { allTags = tags; });
+
+		function updateSelectionInfo() {
+			const info = document.getElementById('selection-info');
+			if (multiSelectedItems.size > 0) {
+				info.textContent = multiSelectedItems.size + ' items selected';
+				info.classList.add('active');
+			} else {
+				info.classList.remove('active');
+			}
+		}
+
+		function selectItem(item) {
+			if (selectedItem) {
+				selectedItem.classList.remove('selected');
+				const container = selectedItem.querySelector('.tag-input-container');
+				if (container) {
+					container.classList.remove('active');
+				}
+			}
+			selectedItem = item;
+			selectedItem.classList.add('selected');
+			selectedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+
+		function toggleMultiSelect(item) {
+			const filepath = item.dataset.filepath;
+			if (multiSelectedItems.has(filepath)) {
+				multiSelectedItems.delete(filepath);
+				item.classList.remove('multi-selected');
+			} else {
+				multiSelectedItems.add(filepath);
+				item.classList.add('multi-selected');
+			}
+			updateSelectionInfo();
+		}
+
+		function clearMultiSelection() {
+			items.forEach(item => item.classList.remove('multi-selected'));
+			multiSelectedItems.clear();
+			updateSelectionInfo();
+		}
+
+		function navigateToView() {
+			if (selectedItem) {
+				const filepath = encodeURIComponent(selectedItem.dataset.filepath);
+				window.location.href = '/view/{{urlEncode .Tag}}?file=' + filepath;
+			}
+		}
+
+
+		function showNotification(message) {
+			const notif = document.getElementById('notification');
+			notif.textContent = message;
+			notif.classList.add('show');
+			setTimeout(() => notif.classList.remove('show'), 2000);
+		}
+
+		function addTag(item, tagName) {
+			const filePath = item.dataset.filepath;
+			fetch('/api/addtag', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePath: filePath, tag: tagName })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('✅ Tag added: ' + tagName);
+					updateTagsDisplay(item, data.tags);
+				}
+			})
+			.catch(err => console.error('Error adding tag:', err));
+		}
+
+		function addTagToMultiple(tagName) {
+			if (multiSelectedItems.size === 0) return;
+
+			const filePaths = Array.from(multiSelectedItems);
+			fetch('/api/batchaddtag', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePaths: filePaths, tag: tagName })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('✅ Tag added to ' + data.count + ' files');
+					setTimeout(() => location.reload(), 1000);
+				}
+			})
+			.catch(err => console.error('Error adding tags:', err));
+		}
+
+		function removeTag(item, tagName) {
+			const filePath = item.dataset.filepath;
+			fetch('/api/removetag', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePath: filePath, tag: tagName })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('✅ Tag removed: ' + tagName);
+					updateTagsDisplay(item, data.tags);
+				}
+			})
+			.catch(err => console.error('Error removing tag:', err));
+		}
+
+		function updateTagsDisplay(item, tags) {
+			const container = item.querySelector('.tags-display');
+			container.innerHTML = '';
+			if (tags.length === 0) {
+				container.innerHTML = '<span style="color: #737373; font-size: 14px;">No tags</span>';
+			} else {
+				tags.forEach(tag => {
+					const a = document.createElement('a');
+					a.href = '/tag/' + encodeURIComponent(tag);
+					a.className = 'tag';
+					a.setAttribute('data-tag', tag);
+					a.textContent = tag;
+					a.onclick = (e) => e.stopPropagation();
+					container.appendChild(a);
+				});
+			}
+			attachTagListeners(item);
+		}
+
+		function attachTagListeners(item) {
+			item.querySelectorAll('.tag').forEach(tag => {
+				tag.addEventListener('contextmenu', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					contextMenuTag = this.getAttribute('data-tag');
+					const menu = document.getElementById('context-menu');
+					menu.style.display = 'block';
+					menu.style.left = e.pageX + 'px';
+					menu.style.top = e.pageY + 'px';
+					menu.dataset.item = item.dataset.index;
+				});
+			});
+		}
+
+		document.addEventListener('click', function() {
+			document.getElementById('context-menu').style.display = 'none';
+		});
+
+		document.getElementById('menu-delete').addEventListener('click', function() {
+			if (contextMenuTag) {
+				const menu = document.getElementById('context-menu');
+				const item = document.querySelector('[data-index="' + menu.dataset.item + '"]');
+				if (item) {
+					removeTag(item, contextMenuTag);
+				}
+			}
+			document.getElementById('context-menu').style.display = 'none';
+		});
+
+		document.getElementById('menu-goto').addEventListener('click', function() {
+			if (contextMenuTag) {
+				window.location.href = '/tag/' + encodeURIComponent(contextMenuTag);
+			}
+		});
+
+		document.addEventListener('keydown', function(e) {
+			// Don't intercept keystrokes while editing tags or comments
+			const activeElement = document.activeElement;
+			if (activeElement && (activeElement.classList.contains('tag-input') || activeElement.classList.contains('comment-edit'))) {
+				return;
+			}
+
+			// Don't intercept browser shortcuts (Cmd+L, Cmd+Plus, Cmd+Minus, etc.)
+			if (e.metaKey || e.ctrlKey) return;
+
+			// Handle sort keys FIRST (works without selection)
+			if (e.key === 's' || e.key === 'S') {
+				console.log('S key detected! shiftKey:', e.shiftKey, 'key:', e.key);
+				e.preventDefault();
+				if (e.shiftKey) {
+					// Shift+S: reverse sort order (for name, date, size only)
+					if (sortMode === 'name' || sortMode === 'date' || sortMode === 'size') {
+						sortReversed = !sortReversed;
+					}
+				} else {
+					// S: cycle through sort modes: name → date → size → random → reverse-random → name
+					if (sortMode === 'name') {
+						sortMode = 'date';
+					} else if (sortMode === 'date') {
+						sortMode = 'size';
+					} else if (sortMode === 'size') {
+						sortMode = 'random';
+						randomOrder = []; // Clear previous random order for fresh shuffle
+					} else if (sortMode === 'random') {
+						sortMode = 'reverse-random';
+					} else if (sortMode === 'reverse-random') {
+						sortMode = 'name';
+						randomOrder = []; // Clear random order when leaving random modes
+					}
+				}
+				sortItems();
+				showSortIndicator();
+				return; // Don't process other handlers
+			}
+
+			// All other keys require a selected item
+			if (!selectedItem) return;
+
+			const tagInputContainer = selectedItem.querySelector('.tag-input-container');
+			const tagInput = selectedItem.querySelector('.tag-input');
+
+			const currentIndex = items.indexOf(selectedItem);
+
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				const nextIndex = (currentIndex + 1) % items.length;
+				selectItem(items[nextIndex]);
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				const prevIndex = (currentIndex - 1 + items.length) % items.length;
+				selectItem(items[prevIndex]);
+			} else if (e.key === ' ') {
+				e.preventDefault();
+				// Space bar: toggle current selected item into multi-selection
+				toggleMultiSelect(selectedItem);
+			} else if (e.key === 'Enter') {
+				e.preventDefault();
+				navigateToView();
+			} else if (e.key === 't' || e.key === 'T') {
+				e.preventDefault();
+				tagInputContainer.classList.add('active');
+				tagInput.focus();
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				clearMultiSelection();
+			} else if (e.key === 'c' || e.key === 'C') {
+				e.preventDefault();
+				// C key: edit comment on selected file
+				enableCommentEditing(selectedItem);
+			} else if (e.key === 'l' || e.key === 'L') {
+				e.preventDefault();
+				if (multiSelectedItems.size > 0) {
+					addTagToMultiple('❤️');
+				} else {
+					addTag(selectedItem, '❤️');
+				}
+			} else if (starRatings[e.key]) {
+				e.preventDefault();
+				if (multiSelectedItems.size > 0) {
+					addTagToMultiple(starRatings[e.key]);
+				} else {
+					addTag(selectedItem, starRatings[e.key]);
+				}
+			}
+		});
+
+		document.querySelectorAll('.tag-input').forEach(input => {
+			let selectedAutocompleteIndex = -1;
+
+			input.addEventListener('input', function() {
+				const value = this.value.toLowerCase();
+				const autocomplete = this.parentElement.querySelector('.autocomplete');
+
+				if (!value) {
+					autocomplete.innerHTML = '';
+					return;
+				}
+
+				const matches = allTags.filter(t => t.toLowerCase().includes(value));
+				autocomplete.innerHTML = '';
+				selectedAutocompleteIndex = -1;
+
+				matches.forEach((tag, idx) => {
+					const div = document.createElement('div');
+					div.className = 'autocomplete-item';
+					div.textContent = tag;
+					div.addEventListener('click', () => {
+						const item = this.closest('.item');
+						if (multiSelectedItems.size > 0) {
+							addTagToMultiple(tag);
+						} else {
+							addTag(item, tag);
+						}
+						this.value = '';
+						autocomplete.innerHTML = '';
+					});
+					autocomplete.appendChild(div);
+				});
+			});
+
+			input.addEventListener('keydown', function(e) {
+				const autocomplete = this.parentElement.querySelector('.autocomplete');
+				const items = autocomplete.querySelectorAll('.autocomplete-item');
+
+				if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					selectedAutocompleteIndex = Math.min(selectedAutocompleteIndex + 1, items.length - 1);
+					updateAutocompleteSelection(items, selectedAutocompleteIndex);
+				} else if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					selectedAutocompleteIndex = Math.max(selectedAutocompleteIndex - 1, -1);
+					updateAutocompleteSelection(items, selectedAutocompleteIndex);
+				} else if (e.key === 'Enter') {
+					e.preventDefault();
+					const item = this.closest('.item');
+					if (selectedAutocompleteIndex >= 0 && items[selectedAutocompleteIndex]) {
+						const tag = items[selectedAutocompleteIndex].textContent;
+						if (multiSelectedItems.size > 0) {
+							addTagToMultiple(tag);
+						} else {
+							addTag(item, tag);
+						}
+					} else if (this.value.trim()) {
+						const tag = this.value.trim();
+						if (multiSelectedItems.size > 0) {
+							addTagToMultiple(tag);
+						} else {
+							addTag(item, tag);
+						}
+					}
+					this.value = '';
+					autocomplete.innerHTML = '';
+				} else if (e.key === 'Escape') {
+					this.value = '';
+					autocomplete.innerHTML = '';
+					this.parentElement.classList.remove('active');
+				}
+			});
+		});
+
+		function updateAutocompleteSelection(items, index) {
+			items.forEach((item, idx) => {
+				item.classList.toggle('selected', idx === index);
+			});
+			if (index >= 0 && items[index]) {
+				items[index].scrollIntoView({ block: 'nearest' });
+			}
+		}
+
+		// Lazy loading for videos using Intersection Observer
+		const videoObserver = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const placeholder = entry.target;
+					const videoSrc = placeholder.dataset.videoSrc;
+
+					// Create video element
+					const video = document.createElement('video');
+					video.src = videoSrc;
+					video.className = 'preview';
+					video.controls = true;
+					video.muted = true;
+
+					// Replace placeholder with actual video
+					placeholder.replaceWith(video);
+
+					// Stop observing this element
+					videoObserver.unobserve(placeholder);
+				}
+			});
+		}, {
+			rootMargin: '50px' // Start loading 50px before entering viewport
+		});
+
+		// Observe all lazy video placeholders
+		document.querySelectorAll('.lazy-video').forEach(placeholder => {
+			videoObserver.observe(placeholder);
+		});
+
+		// ============================================================================
+		// COMMENT EDITING FUNCTIONS
+		// ============================================================================
+
+		function enableCommentEditing(item) {
+			// Disable any existing editing
+			disableAllCommentEditing();
+
+			const container = item.querySelector('.comment-container');
+			const display = container.querySelector('.comment-display');
+			const textarea = container.querySelector('.comment-edit');
+
+			// Get current comment
+			const currentComment = item.dataset.comment || '';
+
+			// Show textarea, hide display
+			display.style.display = 'none';
+			textarea.style.display = 'block';
+			textarea.value = currentComment;
+			textarea.focus();
+
+			currentEditingComment = item;
+
+			// Save on blur
+			textarea.addEventListener('blur', () => saveComment(item), { once: true });
+
+			// Save on Ctrl+Enter or Cmd+Enter
+			textarea.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+					e.preventDefault();
+					saveComment(item);
+				}
+				// Cancel on Escape
+				if (e.key === 'Escape') {
+					e.preventDefault();
+					cancelCommentEdit(item);
+				}
+			});
+		}
+
+		function disableAllCommentEditing() {
+			document.querySelectorAll('.comment-edit').forEach(textarea => {
+				textarea.style.display = 'none';
+			});
+			document.querySelectorAll('.comment-display').forEach(display => {
+				display.style.display = 'block';
+			});
+			currentEditingComment = null;
+		}
+
+		function cancelCommentEdit(item) {
+			const container = item.querySelector('.comment-container');
+			const display = container.querySelector('.comment-display');
+			const textarea = container.querySelector('.comment-edit');
+
+			textarea.style.display = 'none';
+			display.style.display = 'block';
+			currentEditingComment = null;
+		}
+
+		async function saveComment(item) {
+			const container = item.querySelector('.comment-container');
+			const display = container.querySelector('.comment-display');
+			const textarea = container.querySelector('.comment-edit');
+			const filepath = item.dataset.filepath;
+			const newComment = textarea.value.trim();
+
+			// Show saving state
+			container.classList.add('comment-saving');
+
+			try {
+				const response = await fetch('/api/comment', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						filepath: filepath,
+						comment: newComment
+					})
+				});
+
+				if (!response.ok) {
+					throw new Error('Failed to update comment');
+				}
+
+				// Update UI
+				item.dataset.comment = newComment;
+				display.textContent = newComment;
+
+				// Update empty state
+				if (newComment === '') {
+					display.classList.add('empty');
+				} else {
+					display.classList.remove('empty');
+				}
+
+				console.log('Comment saved successfully');
+
+			} catch (error) {
+				console.error('Error saving comment:', error);
+				alert('Failed to save comment. Please try again.');
+			} finally {
+				// Hide textarea, show display
+				container.classList.remove('comment-saving');
+				textarea.style.display = 'none';
+				display.style.display = 'block';
+				currentEditingComment = null;
+			}
+		}
+
+		// Comment click to edit
+		document.addEventListener('click', (e) => {
+			if (e.target.closest('.comment-display')) {
+				const item = e.target.closest('.item');
+				if (item) {
+					enableCommentEditing(item);
+				}
+			}
+		});
+
+		// ============================================================================
+		// RESCAN FUNCTIONALITY
+		// ============================================================================
+
+		let scanStatusInterval = null;
+
+		async function triggerRescan() {
+			const button = document.getElementById('rescanButton');
+			const buttonText = document.getElementById('rescanText');
+
+			// Don't trigger if already scanning
+			if (button.classList.contains('scanning')) {
+				return;
+			}
+
+			try {
+				const response = await fetch('/api/rescan', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+
+				const data = await response.json();
+
+				if (data.success) {
+					// Set to scanning state
+					button.classList.add('scanning');
+					button.classList.remove('completed');
+					buttonText.textContent = 'Scanning...';
+
+					// Start polling for status
+					startScanStatusPolling();
+				} else {
+					console.error('Rescan failed:', data.message);
+					alert('Scan already in progress');
+				}
+			} catch (error) {
+				console.error('Error triggering rescan:', error);
+				alert('Failed to start rescan');
+			}
+		}
+
+		function startScanStatusPolling() {
+			// Clear any existing interval
+			if (scanStatusInterval) {
+				clearInterval(scanStatusInterval);
+			}
+
+			// Poll every 500ms
+			scanStatusInterval = setInterval(async () => {
+				try {
+					const response = await fetch('/api/scanstatus');
+					const data = await response.json();
+
+					const button = document.getElementById('rescanButton');
+					const buttonText = document.getElementById('rescanText');
+
+					if (data.completed) {
+						// Scan completed - transition to green
+						button.classList.remove('scanning');
+						button.classList.add('completed');
+						buttonText.textContent = 'Scan Complete!';
+
+						// Stop polling
+						clearInterval(scanStatusInterval);
+						scanStatusInterval = null;
+
+						// Auto-reload page after 2 seconds to show updated files
+						setTimeout(() => {
+							window.location.reload();
+						}, 2000);
+					} else if (!data.isScanning) {
+						// Not scanning and not completed - reset
+						button.classList.remove('scanning');
+						button.classList.remove('completed');
+						buttonText.textContent = 'Rescan';
+						clearInterval(scanStatusInterval);
+						scanStatusInterval = null;
+					}
+				} catch (error) {
+					console.error('Error polling scan status:', error);
+					// Don't stop polling on error - server might be busy
+				}
+			}, 500);
+		}
+
+		// ============================================================================
+		// SHUTDOWN MODAL AND FUNCTIONALITY
+		// ============================================================================
+
+		function showShutdownModal() {
+			document.getElementById('shutdownModal').classList.add('show');
+		}
+
+		function hideShutdownModal() {
+			document.getElementById('shutdownModal').classList.remove('show');
+		}
+
+		async function confirmShutdown() {
+			try {
+				const response = await fetch('/api/shutdown', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+
+				if (response.ok) {
+					// Update modal to show shutdown message
+					const modal = document.querySelector('.modal');
+					modal.innerHTML = `
+						<div class="modal-title">👋 Shutting Down</div>
+						<div class="modal-message">Media server is shutting down...</div>
+					`;
+
+					// Give server time to shutdown, then close window
+					setTimeout(() => {
+						window.close();
+					}, 2000);
+				} else {
+					alert('Failed to shutdown server. Please try again.');
+					hideShutdownModal();
+				}
+			} catch (error) {
+				console.error('Error shutting down server:', error);
+				// Server already shutdown - update UI
+				const modal = document.querySelector('.modal');
+				modal.innerHTML = `
+					<div class="modal-title">✅ Server Stopped</div>
+					<div class="modal-message">Media server has been shut down.</div>
+				`;
+				setTimeout(() => {
+					window.close();
+				}, 1500);
+			}
+		}
+
+		// Close modal when clicking outside of it
+		document.getElementById('shutdownModal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				hideShutdownModal();
+			}
+		});
+
+		// ESC key to close modal
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				// Only close shutdown modal if no comment is being edited
+				if (!currentEditingComment) {
+					hideShutdownModal();
+				}
+			}
+		});
+	</script>
+
+	<!-- Shutdown Confirmation Modal -->
+	<div class="modal-overlay" id="shutdownModal">
+		<div class="modal">
+			<div class="modal-title">⏻ Shutdown Server</div>
+			<div class="modal-message">Do you really want to quit this media server?</div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideShutdownModal()">Cancel</button>
+				<button class="modal-button confirm" onclick="confirmShutdown()">Shutdown</button>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
