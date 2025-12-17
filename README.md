@@ -4,6 +4,8 @@
 
 **Development Approach**: AI-native development using LLMs, trunk-based git workflow, and living documentation as operational infrastructure.
 
+**tl;dr**: It's more like a gist than a repo.
+
 **Last Updated**: 2025-12-12
 
 ---
