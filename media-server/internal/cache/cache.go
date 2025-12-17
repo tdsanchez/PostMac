@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/tdsanchez/PostMac/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
 )
 
 const schema = `

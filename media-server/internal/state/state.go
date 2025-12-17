@@ -4,7 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/tdsanchez/PostMac/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
 )
 
 // CacheInterface defines the minimal interface needed from the cache

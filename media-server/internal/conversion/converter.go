@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 // ConvertToHTML converts RTF or WebArchive files to HTML using textutil

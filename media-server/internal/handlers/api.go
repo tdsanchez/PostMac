@@ -14,14 +14,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tdsanchez/PostMac/internal/cache"
-	"github.com/tdsanchez/PostMac/internal/config"
-	"github.com/tdsanchez/PostMac/internal/conversion"
-	"github.com/tdsanchez/PostMac/internal/metadata"
-	"github.com/tdsanchez/PostMac/internal/models"
-	"github.com/tdsanchez/PostMac/internal/persistence"
-	"github.com/tdsanchez/PostMac/internal/scanner"
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/cache"
+	"github.com/tdsanchez/PostMac/media-server/internal/config"
+	"github.com/tdsanchez/PostMac/media-server/internal/conversion"
+	"github.com/tdsanchez/PostMac/media-server/internal/metadata"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/persistence"
+	"github.com/tdsanchez/PostMac/media-server/internal/scanner"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 var embeddedFiles embed.FS

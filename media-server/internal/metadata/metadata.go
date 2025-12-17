@@ -8,7 +8,7 @@ import (
 
 	"github.com/rwcarlsen/goexif/exif"
 
-	"github.com/tdsanchez/PostMac/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
 )
 
 // GetFileMetadata extracts metadata and EXIF information from a file

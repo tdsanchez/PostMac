@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/tdsanchez/PostMac/internal/cache"
-	"github.com/tdsanchez/PostMac/internal/scanner"
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/cache"
+	"github.com/tdsanchez/PostMac/media-server/internal/scanner"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 // Watcher monitors filesystem changes and triggers automatic rescans

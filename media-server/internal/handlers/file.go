@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tdsanchez/PostMac/internal/config"
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/config"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 // HandleFile serves individual media files with proper MIME types

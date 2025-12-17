@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tdsanchez/PostMac/internal/cache"
-	"github.com/tdsanchez/PostMac/internal/config"
-	"github.com/tdsanchez/PostMac/internal/models"
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/cache"
+	"github.com/tdsanchez/PostMac/media-server/internal/config"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 // ScanDirectory scans the serve directory using double-buffered state (no blocking)

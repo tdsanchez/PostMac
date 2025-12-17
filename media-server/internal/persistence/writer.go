@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/tdsanchez/PostMac/internal/models"
-	"github.com/tdsanchez/PostMac/internal/scanner"
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/scanner"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 // QueueDiskWrite adds a tag update to the write queue for batched persistence.

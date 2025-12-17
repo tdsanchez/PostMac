@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/tdsanchez/PostMac/internal/handlers"
-	"github.com/tdsanchez/PostMac/internal/persistence"
-	"github.com/tdsanchez/PostMac/internal/scanner"
-	"github.com/tdsanchez/PostMac/internal/state"
-	"github.com/tdsanchez/PostMac/internal/watcher"
+	"github.com/tdsanchez/PostMac/media-server/internal/handlers"
+	"github.com/tdsanchez/PostMac/media-server/internal/persistence"
+	"github.com/tdsanchez/PostMac/media-server/internal/scanner"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/watcher"
 )
 
 //go:embed main_template.html main_template.js index_template.html gallery_template.html

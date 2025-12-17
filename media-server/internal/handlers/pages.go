@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tdsanchez/PostMac/internal/config"
-	"github.com/tdsanchez/PostMac/internal/models"
-	"github.com/tdsanchez/PostMac/internal/state"
+	"github.com/tdsanchez/PostMac/media-server/internal/config"
+	"github.com/tdsanchez/PostMac/media-server/internal/models"
+	"github.com/tdsanchez/PostMac/media-server/internal/state"
 )
 
 // BreadcrumbSegment represents a clickable segment in a breadcrumb trail
