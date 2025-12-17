@@ -10,7 +10,7 @@
 
 | Project | Status | Language | Purpose | Documentation |
 |---------|--------|----------|---------|---------------|
-| [media_server](#media_server) | Production | Go | Media library manager (100k+ files) | [Overview](media_server/PROJECT_OVERVIEW.md) |
+| [media_server](#media_server) | Released as PoC | Go | Media library manager (100k+ files) | [Overview](media_server/PROJECT_OVERVIEW.md) |
 | [apfs-monitor](#apfs-monitor) | Production | Go | APFS container space monitor | [Overview](apfs-monitor/PROJECT_OVERVIEW.md) |
 | [IaaDb](#iaadb) | Development | Go | Infrastructure as a Database (K8s alternative) | [Overview](IaaDb/PROJECT_OVERVIEW.md) |
 
