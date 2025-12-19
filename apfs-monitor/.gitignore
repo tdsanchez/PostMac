@@ -1,0 +1,16 @@
+# Compiled binary
+apfs-monitor
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Test files
+*.tmp
+apfs-test-file.tmp
