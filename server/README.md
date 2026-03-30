@@ -21,7 +21,7 @@ server --output server.html --serve 8080
 | `--output` | `server.html` | output path |
 | `--title` | `Server` | page title |
 | `--serve` | 0 | dev HTTP port (also registers SW) |
-| `--wasm` | auto | path to viewer.wasm |
+| `--wasm` | auto | path to mdrender.wasm |
 
 ## What the artifact does
 
@@ -32,7 +32,7 @@ server --output server.html --serve 8080
 5. Optional: fill in a passphrase (leave empty for unencrypted)
 6. Click "Save" → downloads a Publisher-format `.html` artifact containing all selected files
 
-The saved artifact is fully self-contained: viewer.wasm, all file content, wordcloud, gallery, tag browser — everything in one file.
+The saved artifact is fully self-contained: mdrender.wasm, all file content, wordcloud, gallery, tag browser — everything in one file.
 
 ## What's baked in at build time
 

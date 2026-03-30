@@ -44,8 +44,8 @@ A high-performance media server for macOS that manages hundreds of thousands of 
 
 ### Build and Run
 ```bash
-go build -o media-server cmd/media-server/main.go
-./media-server --dir=/Volumes/Nihilus/media --port=8080
+go build -o media-server ./cmd/media-server/
+cat /path/to/your.paths | ./media-server --port=8080
 ```
 
 Open http://localhost:8080

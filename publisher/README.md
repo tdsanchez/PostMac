@@ -19,7 +19,7 @@ find /some/dir -name "*.md" | publisher --output docs.html
 | `--title` | `Published` | artifact title |
 | `--cache` | `~/.media-server-conf/cache.db` | metadata cache (read-only, optional) |
 | `--wasm` | auto | path to mdrender.wasm |
-| `--fresh` | false | recompile viewer.wasm before bundling |
+| `--fresh` | false | recompile mdrender.wasm before bundling |
 | `--server` | — | media-server URL for live tag editing |
 | `--passphrase` | — | encrypt with AES-256-GCM + PBKDF2 (100k iterations) |
 | `--ring` | — | URL of ring.json for ← prev \| index \| next → nav |
@@ -41,7 +41,7 @@ One JSON manifest containing all file content and metadata, gzip+base64 encoded.
 | `video/*`, `audio/*` | `<video>` / `<audio>` data URI |
 | other | `<pre>` fallback |
 
-Text and JSON are gzip-compressed before base64 encoding. Images, PDFs, and video are already compressed and are skipped.
+Text, JSON, and SVG are gzip-compressed before base64 encoding. Images (except SVG), PDFs, and video are already compressed and are skipped.
 
 ## Metadata enrichment
 

@@ -25,7 +25,6 @@ Web-based media library manager for organizing and tagging large file collection
 - Go, single binary
 - SQLite cache (14x faster startup vs. cold scan)
 - FSEvents for cache coherence
-- APFS container space monitor with persistent modal alerts
 
 ### publisher
 
