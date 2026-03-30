@@ -20,7 +20,7 @@ The development model: natural language as development interface, git history as
 
 ### media-server
 
-Web-based media library manager for organizing and tagging large file collections. Tested at 168k+ files, architected for 5M+. Runs as a macOS LaunchAgent. Serves a browser UI for tagging via extended attributes, scanning, and cache-accelerated loads.
+Web-based media library manager for organizing and tagging large file collections. Tested at 168k+ files, architected for 5M+. Started manually (nohup or Ansible). Serves a browser UI for tagging via extended attributes, scanning, and cache-accelerated loads.
 
 - Go, single binary
 - SQLite cache (14x faster startup vs. cold scan)
@@ -90,7 +90,7 @@ A few more things under active development — not documented here yet, but wort
 
 **Trunk-based.** No feature branches. Always integrated. Git log is the design rationale.
 
-**macOS-native integration.** Extended attributes for tags, FSEvents for cache coherence, LaunchAgents for background services.
+**macOS-native integration.** Extended attributes for tags, FSEvents for cache coherence.
 
 ## Building
 
