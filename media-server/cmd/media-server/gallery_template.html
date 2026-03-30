@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{{.Tag}} - Media Server</title>
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #000; color: #fff; }
+
+		/* Floating Header */
+		.floating-header { position: fixed; top: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #333; z-index: 999; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+		.floating-header-content { display: flex; justify-content: space-between; align-items: center; padding: 12px 40px; max-width: 100%; }
+		.header-left { display: flex; align-items: center; gap: 20px; flex: 1; }
+		.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #B3B3B3; }
+		.breadcrumb-item { color: #4DA3FF; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+		.breadcrumb-item:hover { color: #6BB5FF; text-decoration: underline; }
+		.breadcrumb-item:focus { outline: 3px solid #4DA3FF; outline-offset: 2px; border-radius: 4px; }
+		.breadcrumb-separator { color: #666; user-select: none; }
+		.breadcrumb-current { color: #E0E0E0; font-weight: 600; }
+		.file-count { color: #B3B3B3; font-size: 14px; margin-left: 10px; }
+
+		/* Header Buttons Container */
+		.header-buttons { display: flex; gap: 10px; align-items: center; }
+
+		/* Shutdown Button */
+		.shutdown-button { background: #FF3B30; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.2s, transform 0.1s; box-shadow: 0 2px 4px rgba(255, 59, 48, 0.3); }
+		.shutdown-button:hover { background: #FF2D21; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 59, 48, 0.4); }
+		.shutdown-button:active { transform: translateY(0); }
+		.power-icon { font-size: 16px; }
+
+		/* Rescan Button with animated states */
+		.rescan-button { background: #FF6B47; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.8s ease; box-shadow: 0 2px 4px rgba(255, 107, 71, 0.3); position: relative; overflow: hidden; }
+		.rescan-button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 107, 71, 0.4); }
+		.rescan-button:active { transform: translateY(0); }
+		.rescan-button.scanning { background: #FFA500; cursor: wait; animation: pulse 1.5s ease-in-out infinite; }
+		.rescan-button.completed { background: #34C759; box-shadow: 0 2px 4px rgba(52, 199, 89, 0.5); }
+		.rescan-icon { font-size: 16px; transition: transform 0.8s ease; }
+		.rescan-button.scanning .rescan-icon { animation: rotate 2s linear infinite; }
+
+		@keyframes pulse {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.7; }
+		}
+
+		@keyframes rotate {
+			from { transform: rotate(0deg); }
+			to { transform: rotate(360deg); }
+		}
+
+		/* Training Button */
+		.training-button { background: #34C759; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: background 0.2s, transform 0.1s; box-shadow: 0 2px 4px rgba(52, 199, 89, 0.3); }
+		.training-button:hover { background: #30B350; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(52, 199, 89, 0.4); }
+		.training-button:active { transform: translateY(0); }
+
+		/* Modal */
+		.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 10000; align-items: center; justify-content: center; }
+		.modal-overlay.show { display: flex; }
+		.modal { background: #222; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); border: 1px solid #444; }
+		.modal-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; color: #fff; }
+		.modal-message { font-size: 16px; color: #B3B3B3; margin-bottom: 24px; line-height: 1.5; }
+		.modal-buttons { display: flex; gap: 12px; justify-content: flex-end; }
+		.modal-button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+		.modal-button.cancel { background: #444; color: #fff; }
+		.modal-button.cancel:hover { background: #555; }
+		.modal-button.confirm { background: #FF3B30; color: white; }
+		.modal-button.confirm:hover { background: #FF2D21; }
+
+		h1 { color: #E0E0E0; margin-bottom: 10px; }
+		.back { display: inline-block; margin-bottom: 20px; color: #4DA3FF; text-decoration: none; font-weight: 500; }
+		.back:hover { text-decoration: underline; }
+		.back:focus { outline: 3px solid #4DA3FF; outline-offset: 2px; border-radius: 4px; }
+		.hint { color: #B3B3B3; font-size: 15px; margin-bottom: 20px; line-height: 1.5; }
+		.sort-shortcut { cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
+		.sort-shortcut:hover { background: rgba(52, 199, 89, 0.3); color: #fff; }
+		.selection-info { position: fixed; top: 80px; right: 20px; background: rgba(0,122,255,0.9); color: white; padding: 14px 22px; border-radius: 8px; font-size: 16px; display: none; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+		.selection-info.active { display: block; }
+		.sort-indicator { position: fixed; top: 80px; left: 20px; background: rgba(52,199,89,0.9); color: white; padding: 14px 22px; border-radius: 8px; font-size: 16px; display: none; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-weight: 600; }
+		.sort-indicator.active { display: block; animation: fadeIn 0.3s ease; }
+		@keyframes fadeIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+		.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+		.item, .folder-item { background: #1e1e1e; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; position: relative; border: 1px solid #333; }
+		.item:hover, .folder-item:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.7); border-color: #555; }
+		.item:focus, .folder-item:focus { outline: 3px solid #4DA3FF; outline-offset: 2px; transform: translateY(-4px); box-shadow: 0 4px 12px rgba(77,163,255,0.3); }
+		.item.selected { box-shadow: 0 0 0 3px #4DA3FF; transform: translateY(-4px); }
+		.item.multi-selected { box-shadow: 0 0 0 4px #FF9500; transform: translateY(-4px); }
+		.item.multi-selected::before { content: '✓'; position: absolute; top: 10px; right: 10px; background: #FF9500; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; z-index: 10; }
+		.preview { width: 100%; height: 300px; object-fit: cover; background: #2a2a2a; display: block; }
+		.preview-icon { width: 100%; height: 300px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 72px; color: #666; }
+		.preview-placeholder { width: 100%; height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 72px; color: white; position: relative; }
+		.preview-placeholder::after { content: 'Loading...'; position: absolute; bottom: 20px; font-size: 14px; opacity: 0.8; }
+		.info { padding: 15px; background: #1e1e1e; }
+		.filename { font-weight: 500; margin-bottom: 10px; word-break: break-word; color: #E0E0E0; font-size: 14px; }
+		.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+		.tag { display: inline-block; padding: 6px 12px; background: #777777; color: black; border-radius: 12px; font-size: 12px; text-decoration: none; transition: background 0.2s; min-height: 24px; line-height: 20px; }
+		.tag:hover { background: #0051D5; }
+		.tag:focus { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #007AFF; }
+		.tag.current { background: #34C759; }
+		.tag-input-container { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; }
+		.tag-input-container.active { display: block; }
+		.tag-input { width: 100%; padding: 10px 14px; border: 1px solid #444; border-radius: 6px; font-size: 16px; background: #2a2a2a; color: #fff; }
+		.tag-input:focus { outline: none; border-color: #4DA3FF; box-shadow: 0 0 0 3px rgba(77,163,255,0.3); }
+		.autocomplete { background: #2a2a2a; border: 1px solid #444; border-radius: 6px; margin-top: 5px; max-height: 150px; overflow-y: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+		.autocomplete-item { padding: 10px 14px; cursor: pointer; font-size: 15px; min-height: 44px; display: flex; align-items: center; color: #E0E0E0; }
+		.autocomplete-item:hover { background: #3a3a3a; }
+		.autocomplete-item.selected { background: rgba(77,163,255,0.3); }
+		.context-menu { position: fixed; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; padding: 4px 0; display: none; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-width: 200px; }
+		.context-menu-item { padding: 12px 18px; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 10px; min-height: 44px; color: #E0E0E0; }
+		.context-menu-item:hover { background: #3a3a3a; }
+		.notification { position: fixed; top: 20px; right: 20px; background: rgba(52,199,89,0.9); padding: 14px 22px; border-radius: 8px; font-size: 16px; display: none; z-index: 2000; color: white; }
+		.notification.show { display: block; animation: slideIn 0.3s ease; }
+		@keyframes slideIn { from { transform: translateX(400px); } to { transform: translateX(0); } }
+		.comment-container { margin-top: 8px; padding: 6px 10px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; min-height: 28px; }
+		.comment-display { color: #B3B3B3; font-size: 13px; cursor: pointer; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+		.comment-display:hover { color: #E0E0E0; background: rgba(255, 255, 255, 0.08); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
+		.comment-display.empty { color: #666; font-style: italic; }
+		.comment-display.empty:before { content: "Click to add comment..."; }
+		.comment-edit { width: 100%; min-height: 60px; background: #2a2a2a; color: #fff; border: 2px solid #4DA3FF; border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box; }
+		.comment-edit:focus { outline: none; border-color: #6BB5FF; box-shadow: 0 0 0 3px rgba(77,163,255,0.3); }
+		.comment-saving { opacity: 0.6; pointer-events: none; }
+		.os-path-info { margin-left: 20px; padding-left: 20px; border-left: 1px solid #333; color: #B3B3B3; font-size: 13px; display: flex; align-items: center; gap: 8px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; }
+		.os-path-text { padding: 4px 8px; background: rgba(255,255,255,0.05); border-radius: 4px; color: #B3B3B3; }
+		.metadata-info { margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #B3B3B3; }
+		.metadata-item { display: inline-flex; align-items: center; gap: 4px; }
+		.metadata-separator { color: #444; }
+
+		/* Pagination */
+		.pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 40px 0; padding: 20px; background: #1e1e1e; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); border: 1px solid #333; }
+		.pagination-btn { padding: 10px 16px; background: #007AFF; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500; transition: background 0.2s, transform 0.1s; text-decoration: none; display: inline-block; min-height: 44px; display: flex; align-items: center; }
+		.pagination-btn:hover { background: #0051D5; transform: translateY(-1px); }
+		.pagination-btn:active { transform: translateY(0); }
+		.pagination-btn:disabled { background: #444; cursor: not-allowed; transform: none; opacity: 0.5; }
+		.pagination-info { color: #B3B3B3; font-size: 15px; font-weight: 500; padding: 0 15px; }
+		.pagination-jump { display: flex; align-items: center; gap: 8px; }
+		.pagination-jump input { width: 60px; padding: 8px 10px; border: 1px solid #444; border-radius: 6px; font-size: 15px; text-align: center; background: #2a2a2a; color: #fff; }
+		.pagination-jump input:focus { outline: none; border-color: #4DA3FF; box-shadow: 0 0 0 3px rgba(77,163,255,0.3); }
+		.pagination-limit { display: flex; align-items: center; gap: 8px; margin-left: 15px; }
+		.pagination-limit select { padding: 8px 10px; border: 1px solid #444; border-radius: 6px; font-size: 15px; cursor: pointer; background: #2a2a2a; color: #fff; }
+		.pagination-limit select:focus { outline: none; border-color: #4DA3FF; box-shadow: 0 0 0 3px rgba(77,163,255,0.3); }
+
+		/* Header Pagination (Compact) */
+		.header-pagination { display: flex; align-items: center; gap: 8px; padding: 0 20px; border-left: 1px solid #333; border-right: 1px solid #333; }
+		.header-pagination .pagination-btn { padding: 6px 12px; font-size: 13px; min-height: 32px; }
+		.header-pagination .pagination-info { font-size: 13px; padding: 0 8px; white-space: nowrap; }
+		.header-pagination .pagination-jump { gap: 6px; }
+		.header-pagination .pagination-jump input { width: 50px; padding: 4px 6px; font-size: 13px; }
+		.header-pagination .pagination-jump button { padding: 4px 8px; font-size: 13px; min-height: 28px; }
+		.header-pagination .pagination-jump span { font-size: 12px; }
+		.header-pagination .pagination-limit { gap: 6px; margin-left: 8px; }
+		.header-pagination .pagination-limit select { padding: 4px 6px; font-size: 13px; }
+		.header-pagination .pagination-limit span { font-size: 12px; }
+
+		/* Explorer Layout - Two Pane */
+		.explorer-layout { display: flex; margin-top: 80px; height: calc(100vh - 80px); gap: 0; }
+
+		/* Folder Tree Sidebar */
+		.folder-tree { width: 280px; min-width: 280px; max-width: 500px; background: #1a1a1a; border-right: 1px solid #333; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; transition: margin-left 0.3s ease; resize: horizontal; }
+		.folder-tree.collapsed { margin-left: -280px; }
+		.tree-header { padding: 16px; border-bottom: 1px solid #333; background: #1e1e1e; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+		.tree-header h3 { margin: 0; font-size: 16px; font-weight: 600; color: #E0E0E0; }
+		.tree-collapse-btn { background: #2a2a2a; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background 0.2s; color: #E0E0E0; }
+		.tree-collapse-btn:hover { background: #3a3a3a; }
+		.tree-content { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+		/* Tree Nodes */
+		.tree-node { user-select: none; }
+		.tree-node-label { display: flex; align-items: center; padding: 6px 8px; cursor: pointer; transition: background 0.15s; min-height: 32px; }
+		.tree-node[data-depth="0"] .tree-node-label { padding-left: 8px; }
+		.tree-node[data-depth="1"] .tree-node-label { padding-left: 28px; }
+		.tree-node[data-depth="2"] .tree-node-label { padding-left: 48px; }
+		.tree-node[data-depth="3"] .tree-node-label { padding-left: 68px; }
+		.tree-node[data-depth="4"] .tree-node-label { padding-left: 88px; }
+		.tree-node-label:hover { background: #2a2a2a; }
+		.tree-toggle { width: 16px; font-size: 11px; color: #999; cursor: pointer; display: inline-block; text-align: center; }
+		.tree-toggle:hover { color: #E0E0E0; }
+		.tree-folder-link { flex: 1; color: #B3B3B3; text-decoration: none; font-size: 14px; margin-left: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.tree-folder-link:hover { text-decoration: underline; color: #E0E0E0; }
+		.tree-folder-link.current { font-weight: 600; color: #4DA3FF; background: rgba(77, 163, 255, 0.2); padding: 2px 6px; border-radius: 4px; margin-left: 0; }
+		.tree-count { font-size: 12px; color: #666; margin-left: 8px; font-variant-numeric: tabular-nums; }
+		.tree-children.collapsed { display: none; }
+
+		/* Floating Sidebar Toggle Button (visible when collapsed) */
+		.floating-sidebar-toggle {
+			position: fixed;
+			left: 10px;
+			top: 100px;
+			background: #2a2a2a;
+			border: 1px solid #444;
+			border-radius: 6px;
+			padding: 10px 8px;
+			cursor: pointer;
+			font-size: 18px;
+			transition: all 0.3s ease;
+			color: #E0E0E0;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+			z-index: 5000;
+			display: none;
+			width: 36px;
+			height: 36px;
+			align-items: center;
+			justify-content: center;
+		}
+		.floating-sidebar-toggle:hover {
+			background: #3a3a3a;
+			transform: translateX(2px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+		}
+		.floating-sidebar-toggle.visible {
+			display: flex;
+		}
+
+		/* Content Pane */
+		.content-pane { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: #000; }
+		.content-wrapper { padding: 20px 40px 40px 40px; }
+	</style>
+</head>
+<body>
+	<!-- Tree Node Template (Recursive) -->
+	{{define "treeNode"}}
+	<div class="tree-node" data-path="{{.Node.Path}}" data-depth="{{.Node.Depth}}">
+		<div class="tree-node-label">
+			{{if .Node.Children}}
+			<span class="tree-toggle" data-state="expanded">▼</span>
+			{{else}}
+			<span class="tree-toggle" style="visibility: hidden;">▶</span>
+			{{end}}
+			<a href="/tag/{{urlEncode .Node.Path}}" class="tree-folder-link{{if eq .Node.Path .CurrentTag}} current{{end}}">
+				📁 {{.Node.Name}}
+			</a>
+			<span class="tree-count">{{.Node.Count}}</span>
+		</div>
+		{{if .Node.Children}}
+		<div class="tree-children">
+			{{range .Node.Children}}
+			{{template "treeNode" (dict "Node" . "CurrentTag" $.CurrentTag)}}
+			{{end}}
+		</div>
+		{{end}}
+	</div>
+	{{end}}
+
+	<!-- Floating Header -->
+	<div class="floating-header">
+		<div class="floating-header-content">
+			<div class="header-left">
+				<nav class="breadcrumb">
+					<a href="/" class="breadcrumb-item">🏠 Home</a>
+					<span class="breadcrumb-separator">›</span>
+					{{$segments := parseFolderBreadcrumbs .Tag}}
+					{{range $i, $segment := $segments}}
+						{{if gt $i 0}}<span class="breadcrumb-separator">›</span>{{end}}
+						{{if eq $i (len $segments | add -1)}}
+							{{if hasPrefix $.Tag "🔍 "}}
+								<span class="breadcrumb-current synthetic-category-name" style="cursor: pointer; text-decoration: underline; text-decoration-style: dotted;" onclick="editSyntheticCategory()" title="Click to edit search query">{{$segment.Label}}</span>
+							{{else}}
+								<span class="breadcrumb-current">{{$segment.Label}}</span>
+							{{end}}
+						{{else}}
+							<a href="{{$segment.URL}}" class="breadcrumb-item">{{$segment.Label}}</a>
+						{{end}}
+					{{end}}
+				</nav>
+				<span class="file-count">
+					{{if gt .TotalPages 1}}
+						Showing {{.StartIdx}}-{{.EndIdx}} of {{.TotalFiles}} files (Page {{.Page}}/{{.TotalPages}})
+					{{else}}
+						{{.TotalFiles}} files
+					{{end}}
+				</span>
+				<span id="scan-progress" style="display:none; opacity:0.7; font-size:0.9em; margin-left: 10px; color: #4DA3FF;"></span>
+				{{if .Files}}
+				<span class="os-path-info">
+					<span class="os-path-text">{{index .Files 0 | getDir}}</span>
+				</span>
+				{{end}}
+			</div>
+			{{if gt .TotalPages 1}}
+			<div class="header-pagination">
+				<a href="/tag/{{urlEncode .Tag}}?page={{if gt .Page 1}}{{sub .Page 1}}{{else}}1{{end}}&limit={{.Limit}}{{if .SortMode}}&sort={{.SortMode}}{{end}}{{if .SortReversed}}&reversed=true{{end}}"
+				   class="pagination-btn {{if eq .Page 1}}disabled{{end}}"
+				   {{if eq .Page 1}}onclick="return false;"{{end}}>
+					«
+				</a>
+
+				<div class="pagination-info">
+					{{.Page}}/{{.TotalPages}}
+				</div>
+
+				<a href="/tag/{{urlEncode .Tag}}?page={{if lt .Page .TotalPages}}{{add .Page 1}}{{else}}{{.TotalPages}}{{end}}&limit={{.Limit}}{{if .SortMode}}&sort={{.SortMode}}{{end}}{{if .SortReversed}}&reversed=true{{end}}"
+				   class="pagination-btn {{if eq .Page .TotalPages}}disabled{{end}}"
+				   {{if eq .Page .TotalPages}}onclick="return false;"{{end}}>
+					»
+				</a>
+
+				<div class="pagination-jump">
+					<span style="color: #595959;">Go:</span>
+					<form action="/tag/{{urlEncode .Tag}}" method="get" style="display: flex; gap: 6px; align-items: center;">
+						<input type="number" name="page" min="1" max="{{.TotalPages}}" value="{{.Page}}" required>
+						<input type="hidden" name="limit" value="{{.Limit}}">
+						{{if .SortMode}}<input type="hidden" name="sort" value="{{.SortMode}}">{{end}}
+						{{if .SortReversed}}<input type="hidden" name="reversed" value="true">{{end}}
+						<button type="submit" class="pagination-btn">Go</button>
+					</form>
+				</div>
+
+				<div class="pagination-limit">
+					<span style="color: #595959;">Show:</span>
+					<select onchange="window.location.href='/tag/{{urlEncode .Tag}}?page=1&limit='+this.value{{if .SortMode}}+'&sort={{.SortMode}}'{{end}}{{if .SortReversed}}+'&reversed=true'{{end}}">
+						<option value="100" {{if eq .Limit 100}}selected{{end}}>100</option>
+						<option value="200" {{if eq .Limit 200}}selected{{end}}>200</option>
+						<option value="500" {{if eq .Limit 500}}selected{{end}}>500</option>
+						<option value="1000" {{if eq .Limit 1000}}selected{{end}}>1000</option>
+						<option value="10000" {{if eq .Limit 10000}}selected{{end}}>10000</option>
+						<option value="25000" {{if eq .Limit 25000}}selected{{end}}>25000</option>
+						<option value="50000" {{if eq .Limit 50000}}selected{{end}}>50000</option>
+						<option value="-1" {{if eq .Limit -1}}selected{{end}}>All</option>
+					</select>
+				</div>
+			</div>
+			{{end}}
+			<div class="header-buttons">
+				{{if eq .Tag "📅 Needs Date Correction"}}
+				<a href="/train" class="training-button" style="text-decoration: none;">
+					<span>🤖</span>
+					<span>Start ML Training</span>
+				</a>
+				{{end}}
+				<button class="rescan-button" id="rescanButton" onclick="triggerRescan()">
+					<span class="rescan-icon">🔄</span>
+					<span id="rescanText">Rescan</span>
+				</button>
+				<button class="shutdown-button" onclick="showShutdownModal()">
+					<span class="power-icon">⏻</span>
+					<span>Shutdown</span>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Floating Sidebar Toggle (visible when sidebar collapsed) -->
+	{{if .FolderTree}}
+	<button class="floating-sidebar-toggle" id="floating-sidebar-toggle" title="Show folder tree">▶</button>
+	{{end}}
+
+	<!-- Explorer Layout: Sidebar + Content -->
+	<div class="explorer-layout">
+		<!-- Left: Folder Tree Sidebar -->
+		{{if .FolderTree}}
+		<nav class="folder-tree" id="folder-tree">
+			<div class="tree-header">
+				<h3>📁 Folders</h3>
+				<button class="tree-collapse-btn" id="tree-collapse-btn" title="Hide folder tree">◀</button>
+			</div>
+			<div class="tree-content">
+				{{range .FolderTree}}
+				{{template "treeNode" (dict "Node" . "CurrentTag" $.Tag)}}
+				{{end}}
+			</div>
+		</nav>
+		{{end}}
+
+		<!-- Right: Content Pane -->
+		<main class="content-pane">
+			<div class="content-wrapper">
+				<div class="hint">Arrow keys: navigate • Space: toggle selection • T: add tags • C: edit comment • X: delete • Enter: view • Cmd/Ctrl+Click: multi-select • L: love • 1-5: stars • <span id="sort-hint" class="sort-shortcut" title="Cycle sort mode (S)">S: sort [name]</span></div>
+				<div class="selection-info" id="selection-info">0 items selected</div>
+				<div class="sort-indicator" id="sort-indicator">📝 SORT: NAME</div>
+
+				<!-- Files Grid (no more subfolder cards) -->
+				<div class="gallery" id="files-gallery">
+		{{range $index, $file := .Files}}
+		<div class="item" data-index="{{$index}}" data-filepath="{{$file.Path}}" data-comment="{{$file.Comment}}" data-name="{{$file.Name}}" data-created="{{$file.Created.Unix}}" data-os-mod="{{$file.OSModTime.Unix}}" data-os-birth="{{$file.OSBirthTime.Unix}}" data-exif-create="{{$file.EXIFCreateDate.Unix}}" data-exif-modify="{{$file.EXIFModifyDate.Unix}}" data-size="{{$file.Size}}" tabindex="0">
+			<div class="preview-wrapper">
+				{{if or (hasSuffix $file.Name ".jpg") (hasSuffix $file.Name ".jpeg") (hasSuffix $file.Name ".png") (hasSuffix $file.Name ".gif") (hasSuffix $file.Name ".webp")}}
+					<img src="/file/{{$file.Path}}" class="preview" alt="{{$file.Name}}" loading="lazy">
+				{{else if or (hasSuffix $file.Name ".mp4") (hasSuffix $file.Name ".mov") (hasSuffix $file.Name ".m4v")}}
+					<div class="preview-placeholder lazy-video" data-video-src="/file/{{$file.Path}}">🎬</div>
+				{{else if hasSuffix $file.Name ".pdf"}}
+					<div class="preview-icon">📑</div>
+				{{else if isTextFile $file.Name}}
+					<div class="preview-icon">📝</div>
+				{{else if isHTMLFile $file.Name}}
+					<div class="preview-icon">🌐</div>
+				{{else if isConvertibleFile $file.Name}}
+					<div class="preview-icon">📃</div>
+				{{else}}
+					<div class="preview-icon">📄</div>
+				{{end}}
+			</div>
+			<div class="info">
+				<div class="filename">| {{$file.Path}} |</div>
+				<div class="tags tags-display">
+					{{if $file.Tags}}
+						{{range $file.Tags}}
+						<a href="/tag/{{urlEncode .}}" class="tag{{if eq . $.Tag}} current{{end}}" data-tag="{{.}}" onclick="event.stopPropagation()">{{.}}</a>
+						{{end}}
+					{{else}}
+						<span style="color: #737373; font-size: 14px;">No tags</span>
+					{{end}}
+				</div>
+				<div class="tag-input-container">
+					<input type="text" class="tag-input" placeholder="Type tag and press Enter (ESC to close)...">
+					<div class="autocomplete"></div>
+				</div>
+				<div class="comment-container">
+					<div class="comment-display{{if not $file.Comment}} empty{{end}}">{{$file.Comment}}</div>
+					<textarea class="comment-edit" style="display:none;"></textarea>
+				</div>
+				<div class="metadata-info">
+					<span class="metadata-item">📏 {{formatFileSize $file.Size}}</span>
+					<span class="metadata-separator">•</span>
+					<span class="metadata-item">📅 {{formatDate $file.Created}}</span>
+				</div>
+			</div>
+		</div>
+		{{end}}
+	</div>
+
+	<!-- Pagination Controls -->
+	{{if gt .TotalPages 1}}
+	<div class="pagination">
+		<a href="/tag/{{urlEncode .Tag}}?page={{if gt .Page 1}}{{sub .Page 1}}{{else}}1{{end}}&limit={{.Limit}}{{if .SortMode}}&sort={{.SortMode}}{{end}}{{if .SortReversed}}&reversed=true{{end}}"
+		   class="pagination-btn {{if eq .Page 1}}disabled{{end}}"
+		   {{if eq .Page 1}}onclick="return false;"{{end}}>
+			« Previous
+		</a>
+
+		<div class="pagination-info">
+			Page {{.Page}} of {{.TotalPages}}
+		</div>
+
+		<a href="/tag/{{urlEncode .Tag}}?page={{if lt .Page .TotalPages}}{{add .Page 1}}{{else}}{{.TotalPages}}{{end}}&limit={{.Limit}}{{if .SortMode}}&sort={{.SortMode}}{{end}}{{if .SortReversed}}&reversed=true{{end}}"
+		   class="pagination-btn {{if eq .Page .TotalPages}}disabled{{end}}"
+		   {{if eq .Page .TotalPages}}onclick="return false;"{{end}}>
+			Next »
+		</a>
+
+		<div class="pagination-jump">
+			<span style="color: #595959;">Go to:</span>
+			<form action="/tag/{{urlEncode .Tag}}" method="get" style="display: flex; gap: 8px; align-items: center;">
+				<input type="number" name="page" min="1" max="{{.TotalPages}}" value="{{.Page}}" required>
+				<input type="hidden" name="limit" value="{{.Limit}}">
+				{{if .SortMode}}<input type="hidden" name="sort" value="{{.SortMode}}">{{end}}
+				{{if .SortReversed}}<input type="hidden" name="reversed" value="true">{{end}}
+				<button type="submit" class="pagination-btn" style="padding: 8px 12px;">Go</button>
+			</form>
+		</div>
+
+		<div class="pagination-limit">
+			<span style="color: #595959;">Per page:</span>
+			<select onchange="window.location.href='/tag/{{urlEncode .Tag}}?page=1&limit='+this.value{{if .SortMode}}+'&sort={{.SortMode}}'{{end}}{{if .SortReversed}}+'&reversed=true'{{end}}">
+				<option value="100" {{if eq .Limit 100}}selected{{end}}>100</option>
+				<option value="200" {{if eq .Limit 200}}selected{{end}}>200</option>
+				<option value="500" {{if eq .Limit 500}}selected{{end}}>500</option>
+				<option value="1000" {{if eq .Limit 1000}}selected{{end}}>1000</option>
+				<option value="10000" {{if eq .Limit 10000}}selected{{end}}>10000</option>
+				<option value="25000" {{if eq .Limit 25000}}selected{{end}}>25000</option>
+				<option value="50000" {{if eq .Limit 50000}}selected{{end}}>50000</option>
+				<option value="-1" {{if eq .Limit -1}}selected{{end}}>All (No Limit)</option>
+			</select>
+		</div>
+	</div>
+	{{end}}
+			</div><!-- /content-wrapper -->
+		</main><!-- /content-pane -->
+	</div><!-- /explorer-layout -->
+
+	<div class="notification" id="notification"></div>
+	<div class="context-menu" id="context-menu">
+		<div class="context-menu-item" id="menu-goto">
+			<span>🔗</span> Go to Tag Gallery
+		</div>
+		<div class="context-menu-item" id="menu-delete">
+			<span>🗑️</span> Delete Tag
+		</div>
+	</div>
+
+	<script>
+		// ============================================================================
+		// FOLDER TREE SIDEBAR
+		// ============================================================================
+
+		// Tree expand/collapse functionality
+		document.addEventListener('DOMContentLoaded', function() {
+			const tree = document.getElementById('folder-tree');
+			if (!tree) return;
+
+			// Handle toggle clicks (expand/collapse)
+			tree.addEventListener('click', function(e) {
+				if (e.target.classList.contains('tree-toggle')) {
+					e.stopPropagation();
+					const node = e.target.closest('.tree-node');
+					const children = node.querySelector(':scope > .tree-children');
+					const toggle = e.target;
+
+					if (children) {
+						const isExpanded = toggle.dataset.state === 'expanded';
+
+						if (isExpanded) {
+							// Collapse
+							children.classList.add('collapsed');
+							toggle.textContent = '▶';
+							toggle.dataset.state = 'collapsed';
+						} else {
+							// Expand
+							children.classList.remove('collapsed');
+							toggle.textContent = '▼';
+							toggle.dataset.state = 'expanded';
+						}
+
+						// Save state to localStorage
+						saveTreeState();
+					}
+				}
+			});
+
+			// Restore tree state from localStorage
+			restoreTreeState();
+
+			// Sidebar collapse toggle
+			const collapseBtn = document.getElementById('tree-collapse-btn');
+			const floatingBtn = document.getElementById('floating-sidebar-toggle');
+
+			function updateSidebarState(collapsed) {
+				if (collapsed) {
+					tree.classList.add('collapsed');
+					if (collapseBtn) collapseBtn.textContent = '▶';
+					if (floatingBtn) floatingBtn.classList.add('visible');
+				} else {
+					tree.classList.remove('collapsed');
+					if (collapseBtn) collapseBtn.textContent = '◀';
+					if (floatingBtn) floatingBtn.classList.remove('visible');
+				}
+				localStorage.setItem('sidebarCollapsed', collapsed);
+			}
+
+			if (collapseBtn) {
+				collapseBtn.addEventListener('click', () => {
+					updateSidebarState(true); // Always collapse when clicking the header button
+				});
+			}
+
+			if (floatingBtn) {
+				floatingBtn.addEventListener('click', () => {
+					updateSidebarState(false); // Always expand when clicking the floating button
+				});
+			}
+
+			// Restore sidebar state
+			const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+			if (sidebarCollapsed) {
+				updateSidebarState(true);
+			}
+		});
+
+		function saveTreeState() {
+			const expandedPaths = [];
+			document.querySelectorAll('.tree-toggle[data-state="expanded"]').forEach(toggle => {
+				const node = toggle.closest('.tree-node');
+				const path = node.dataset.path;
+				if (path) expandedPaths.push(path);
+			});
+			localStorage.setItem('treeExpandedPaths', JSON.stringify(expandedPaths));
+		}
+
+		function restoreTreeState() {
+			const saved = localStorage.getItem('treeExpandedPaths');
+			if (!saved) return;
+
+			const expandedPaths = JSON.parse(saved);
+			expandedPaths.forEach(path => {
+				const node = document.querySelector(`.tree-node[data-path="${path}"]`);
+				if (node) {
+					const toggle = node.querySelector('.tree-toggle');
+					const children = node.querySelector(':scope > .tree-children');
+					if (toggle && children) {
+						children.classList.remove('collapsed');
+						toggle.textContent = '▼';
+						toggle.dataset.state = 'expanded';
+					}
+				}
+			});
+		}
+
+		// ============================================================================
+		// FILE GALLERY
+		// ============================================================================
+
+		const currentCategory = '{{.Tag}}';
+		let allTags = [];
+		let selectedItem = null;
+		let multiSelectedItems = new Set();
+		let contextMenuTag = null;
+		let currentEditingComment = null;
+		let items = [];
+
+		// Initialize items array after DOM is loaded - only from files gallery
+		async function initializeItems() {
+			const filesGallery = document.getElementById('files-gallery');
+			if (filesGallery) {
+				items = Array.from(filesGallery.querySelectorAll('.item'));
+			}
+
+			// Cache FULL file list in localStorage for viewer performance
+			// Fetch complete category from API instead of just current page DOM
+			if (currentCategory) {
+				try {
+					// Fetch full file list from API endpoint
+					const response = await fetch('/api/filelist?category=' + encodeURIComponent(currentCategory));
+
+					if (response.ok) {
+						const allFilePaths = await response.json();
+						const cacheKey = 'fileList_' + currentCategory;
+						const timestampKey = 'fileList_timestamp_' + currentCategory;
+
+						try {
+							localStorage.setItem(cacheKey, JSON.stringify(allFilePaths));
+							localStorage.setItem(timestampKey, Date.now().toString());
+							console.log(`✅ Cached ${allFilePaths.length} files for category "${currentCategory}"`);
+						} catch (storageErr) {
+							if (storageErr.name === 'QuotaExceededError') {
+								// Clear any stale partial cache
+								localStorage.removeItem(cacheKey);
+								localStorage.removeItem(timestampKey);
+								console.warn(`⚠️ Category too large for localStorage (${allFilePaths.length} files)`);
+								console.log('→ Cleared stale cache, viewer will fetch from API when needed');
+							} else {
+								throw storageErr; // Re-throw if not quota error
+							}
+						}
+					} else {
+						console.warn('⚠️ Failed to fetch full file list from API, falling back to current page');
+						// Fallback: cache current page only (previous behavior)
+						if (items.length > 0) {
+							const filePaths = items.map(item => item.dataset.filepath);
+							localStorage.setItem('fileList_' + currentCategory, JSON.stringify(filePaths));
+						}
+					}
+				} catch (e) {
+					// If QuotaExceededError, don't cache anything - let viewer fetch from API
+					if (e.name === 'QuotaExceededError') {
+						// Clear any stale partial cache
+						localStorage.removeItem('fileList_' + currentCategory);
+						localStorage.removeItem('fileList_timestamp_' + currentCategory);
+						console.warn('⚠️ Category too large for localStorage cache (' + currentCategory + ')');
+						console.log('→ Cleared stale cache, viewer will fetch from API when needed');
+					} else {
+						console.warn('⚠️ Error fetching file list:', e);
+						// For other errors, try fallback: cache current page only
+						try {
+							if (items.length > 0) {
+								const filePaths = items.map(item => item.dataset.filepath);
+								localStorage.setItem('fileList_' + currentCategory, JSON.stringify(filePaths));
+								console.log(`→ Cached ${filePaths.length} files from current page as fallback`);
+							}
+						} catch (fallbackErr) {
+							console.error('❌ Failed to cache file list:', fallbackErr);
+						}
+					}
+				}
+			}
+
+			// Attach click handlers to all items
+			items.forEach(item => {
+				item.addEventListener('click', function(e) {
+					// If clicking on a tag or tag input, ignore
+					if (e.target.closest('.tag') || e.target.closest('.tag-input-container')) {
+						return;
+					}
+
+					// If clicking on the preview (image/video/icon), navigate in new tab
+					if (e.target.closest('.preview-wrapper') || e.target.classList.contains('preview') ||
+					    e.target.classList.contains('preview-icon') || e.target.classList.contains('preview-placeholder') ||
+					    e.target.classList.contains('lazy-video')) {
+						// Select item visually, then open in new tab
+						selectItem(this);
+						const filepath = encodeURIComponent(this.dataset.filepath);
+						let url = '/view/{{urlEncode .Tag}}?file=' + filepath;
+
+						// If gallery random mode is ON, add random parameter
+						if (galleryRandomMode) {
+							url += '&random=true';
+						}
+
+						// Pass sort params so viewer navigation matches category order
+						{{if .SortMode}}url += '&sort={{.SortMode}}';{{end}}
+						{{if .SortReversed}}url += '&reversed=true';{{end}}
+
+						window.open(url, '_blank');
+						return;
+					}
+
+					// Clicking on info area (filename, comment, etc.)
+					if (e.metaKey || e.ctrlKey) {
+						// Cmd+Click: toggle multi-select AND move selected indicator
+						toggleMultiSelect(this);
+						selectItem(this);
+					} else {
+						// Regular click: just select
+						selectItem(this);
+					}
+				});
+
+				item.addEventListener('dblclick', function(e) {
+					// Keep double-click as backup navigation method
+					if (!e.target.closest('.tag') && !e.target.closest('.tag-input-container')) {
+						navigateToView();
+					}
+				});
+
+				// Attach tag context menu listeners
+				attachTagListeners(item);
+			});
+
+			// Auto-select first item for immediate keyboard navigation
+			if (items.length > 0) {
+				selectItem(items[0]);
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', function() {
+			initializeItems();
+			// Update UI to show current sort mode (server already sorted)
+			updateSortHint();
+			// Attach click handler to sort hint
+			const sortHint = document.getElementById('sort-hint');
+			if (sortHint) {
+				sortHint.addEventListener('click', cycleSort);
+			}
+		});
+
+		const starRatings = {
+			'1': '1-★',
+			'2': '2-★★',
+			'3': '3-★★★',
+			'4': '4-★★★★',
+			'5': '5-★★★★★',
+			'6': '6-★★★★★★',
+			'7': '7-★★★★★★★',
+			'8': '8-★★★★★★★★',
+			'9': '9-★★★★★★★★★',
+			'0': '10-★★★★★★★★★★'
+		};
+
+		// Sort state - read from URL parameters first, then localStorage
+		const urlParams = new URLSearchParams(window.location.search);
+		let sortMode = urlParams.get('sort') || localStorage.getItem('sortMode') || 'name';
+		let sortReversed = urlParams.get('reversed') === 'true' || (urlParams.get('reversed') === null && localStorage.getItem('sortReversed') === 'true');
+		let randomOrder = []; // Store the random shuffle order
+
+		// Update localStorage to match current state
+		localStorage.setItem('sortMode', sortMode);
+		localStorage.setItem('sortReversed', sortReversed.toString());
+
+		// Gallery random mode - when enabled, clicking files opens single view with random navigation
+		let galleryRandomMode = false;
+
+		function shuffleArray(array) {
+			// Fisher-Yates shuffle algorithm
+			const shuffled = [...array];
+			for (let i = shuffled.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+			}
+			return shuffled;
+		}
+
+		function sortItems() {
+			const gallery = document.getElementById('files-gallery');
+			if (!gallery) return;
+			const itemsArray = Array.from(gallery.querySelectorAll('.item'));
+
+			if (sortMode === 'random') {
+				// Generate new random order if we don't have one
+				if (randomOrder.length === 0) {
+					randomOrder = shuffleArray(itemsArray);
+				}
+				// Apply the random order
+				gallery.innerHTML = '';
+				randomOrder.forEach(item => gallery.appendChild(item));
+			} else if (sortMode === 'reverse-random') {
+				// Use reverse of the random order
+				if (randomOrder.length === 0) {
+					randomOrder = shuffleArray(itemsArray);
+				}
+				gallery.innerHTML = '';
+				[...randomOrder].reverse().forEach(item => gallery.appendChild(item));
+			} else {
+				// Standard sorting for name, dates, size
+				itemsArray.sort((a, b) => {
+					let result = 0;
+
+					if (sortMode === 'name') {
+						result = a.dataset.name.localeCompare(b.dataset.name);
+					} else if (sortMode === 'os_birth') {
+						const aDate = parseInt(a.dataset.osBirth);
+						const bDate = parseInt(b.dataset.osBirth);
+						result = bDate - aDate; // Newest first
+					} else if (sortMode === 'os_mod') {
+						const aDate = parseInt(a.dataset.osMod);
+						const bDate = parseInt(b.dataset.osMod);
+						result = bDate - aDate; // Newest first
+					} else if (sortMode === 'exif_create') {
+						const aDate = parseInt(a.dataset.exifCreate);
+						const bDate = parseInt(b.dataset.exifCreate);
+						result = bDate - aDate; // Newest first
+					} else if (sortMode === 'exif_modify') {
+						const aDate = parseInt(a.dataset.exifModify);
+						const bDate = parseInt(b.dataset.exifModify);
+						result = bDate - aDate; // Newest first
+					} else if (sortMode === 'size') {
+						const aSize = parseInt(a.dataset.size);
+						const bSize = parseInt(b.dataset.size);
+						result = bSize - aSize; // Largest first
+					}
+
+					return sortReversed ? -result : result;
+				});
+
+				// Clear the gallery and re-append in sorted order
+				gallery.innerHTML = '';
+				itemsArray.forEach(item => gallery.appendChild(item));
+			}
+
+			// Update items array to match new DOM order for keyboard navigation
+			items = Array.from(gallery.querySelectorAll('.item'));
+		}
+
+		function updateSortHint() {
+			const hint = document.getElementById('sort-hint');
+			const modeLabels = {
+				'name': 'name',
+				'date': 'date (OS birth)',
+				'os_birth': 'OS birth',
+				'os_mod': 'OS mod',
+				'exif_create': 'EXIF create',
+				'exif_modify': 'EXIF modify',
+				'size': 'size',
+				'random': 'random',
+				'reverse-random': 'reverse-random'
+			};
+			let text = 'S: sort [' + modeLabels[sortMode];
+			if (sortReversed && (sortMode === 'name' || sortMode === 'os_birth' || sortMode === 'os_mod' || sortMode === 'exif_create' || sortMode === 'exif_modify' || sortMode === 'size')) {
+				text += ' ↓';
+			} else if (!sortReversed && (sortMode === 'name' || sortMode === 'os_birth' || sortMode === 'os_mod' || sortMode === 'exif_create' || sortMode === 'exif_modify' || sortMode === 'size')) {
+				text += ' ↑';
+			}
+			text += ']';
+			hint.textContent = text;
+		}
+
+		function showSortIndicator() {
+			const indicator = document.getElementById('sort-indicator');
+			const modeLabels = {
+				'name': '📝 SORT: NAME',
+				'date': '📅 SORT: DATE (OS BIRTH)',
+				'os_birth': '🎂 SORT: OS BIRTH',
+				'os_mod': '📅 SORT: OS MOD',
+				'exif_create': '📸 SORT: EXIF CREATE',
+				'exif_modify': '✏️ SORT: EXIF MODIFY',
+				'size': '📏 SORT: SIZE',
+				'random': '🎲 SORT: RANDOM',
+				'reverse-random': '🔄 SORT: REVERSE-RANDOM'
+			};
+
+			let label = modeLabels[sortMode];
+			if (sortReversed && (sortMode === 'name' || sortMode === 'os_birth' || sortMode === 'os_mod' || sortMode === 'exif_create' || sortMode === 'exif_modify' || sortMode === 'size')) {
+				label += ' (REVERSED)';
+			}
+
+			indicator.textContent = label;
+			indicator.classList.add('active');
+
+			// Auto-hide after 2 seconds
+			setTimeout(() => {
+				indicator.classList.remove('active');
+			}, 2000);
+
+			// Update persistent hint
+			updateSortHint();
+
+			// Save sort preferences to localStorage
+			localStorage.setItem('sortMode', sortMode);
+			localStorage.setItem('sortReversed', sortReversed.toString());
+		}
+
+		// Cycle through sort modes (called by S key or click)
+		function cycleSort() {
+			if (sortMode === 'name') {
+				sortMode = 'os_birth';
+			} else if (sortMode === 'date') {
+				// Legacy 'date' mode - cycle to os_birth
+				sortMode = 'os_birth';
+			} else if (sortMode === 'os_birth') {
+				sortMode = 'os_mod';
+			} else if (sortMode === 'os_mod') {
+				sortMode = 'exif_create';
+			} else if (sortMode === 'exif_create') {
+				sortMode = 'exif_modify';
+			} else if (sortMode === 'exif_modify') {
+				sortMode = 'size';
+			} else if (sortMode === 'size') {
+				sortMode = 'random';
+				randomOrder = [];
+			} else if (sortMode === 'random') {
+				sortMode = 'reverse-random';
+			} else if (sortMode === 'reverse-random') {
+				sortMode = 'name';
+				randomOrder = [];
+			}
+
+			// Save to localStorage
+			localStorage.setItem('sortMode', sortMode);
+			localStorage.setItem('sortReversed', sortReversed.toString());
+
+			// Reload page with sort parameters for server-side sorting
+			const url = new URL(window.location);
+			if (sortMode !== 'name') {
+				url.searchParams.set('sort', sortMode);
+			} else {
+				url.searchParams.delete('sort');
+			}
+			if (sortReversed) {
+				url.searchParams.set('reversed', 'true');
+			} else {
+				url.searchParams.delete('reversed');
+			}
+			window.location.href = url.toString();
+		}
+
+		fetch('/api/alltags')
+			.then(r => r.json())
+			.then(tags => { allTags = tags; });
+
+		function updateSelectionInfo() {
+			const info = document.getElementById('selection-info');
+			if (multiSelectedItems.size > 0) {
+				info.textContent = multiSelectedItems.size + ' items selected';
+				info.classList.add('active');
+			} else {
+				info.classList.remove('active');
+			}
+		}
+
+		function selectItem(item) {
+			if (selectedItem) {
+				selectedItem.classList.remove('selected');
+				const container = selectedItem.querySelector('.tag-input-container');
+				if (container) {
+					container.classList.remove('active');
+				}
+			}
+			selectedItem = item;
+			selectedItem.classList.add('selected');
+			selectedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+
+		function toggleMultiSelect(item) {
+			const filepath = item.dataset.filepath;
+			if (multiSelectedItems.has(filepath)) {
+				multiSelectedItems.delete(filepath);
+				item.classList.remove('multi-selected');
+			} else {
+				multiSelectedItems.add(filepath);
+				item.classList.add('multi-selected');
+			}
+			updateSelectionInfo();
+		}
+
+		function clearMultiSelection() {
+			items.forEach(item => item.classList.remove('multi-selected'));
+			multiSelectedItems.clear();
+			updateSelectionInfo();
+		}
+
+		function navigateToView() {
+			if (selectedItem) {
+				const filepath = encodeURIComponent(selectedItem.dataset.filepath);
+				let url = '/view/{{urlEncode .Tag}}?file=' + filepath;
+
+				// If gallery random mode is ON, add random parameter
+				if (galleryRandomMode) {
+					url += '&random=true';
+				}
+
+				// Pass sort params so viewer navigation matches category order
+				{{if .SortMode}}url += '&sort={{.SortMode}}';{{end}}
+				{{if .SortReversed}}url += '&reversed=true';{{end}}
+
+				window.location.href = url;
+			}
+		}
+
+
+		function showNotification(message) {
+			const notif = document.getElementById('notification');
+			notif.textContent = message;
+			notif.classList.add('show');
+			setTimeout(() => notif.classList.remove('show'), 2000);
+		}
+
+		function addTag(item, tagName) {
+			const filePath = item.dataset.filepath;
+			fetch('/api/addtag', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePath: filePath, tag: tagName })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('✅ Tag added: ' + tagName);
+					updateTagsDisplay(item, data.tags);
+				}
+			})
+			.catch(err => console.error('Error adding tag:', err));
+		}
+
+		function addTagToMultiple(tagName) {
+			if (multiSelectedItems.size === 0) return;
+
+			const filePaths = Array.from(multiSelectedItems);
+			fetch('/api/batchaddtag', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePaths: filePaths, tag: tagName })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('✅ Tag added to ' + data.count + ' files');
+					setTimeout(() => location.reload(), 1000);
+				}
+			})
+			.catch(err => console.error('Error adding tags:', err));
+		}
+
+		function removeTag(item, tagName) {
+			const filePath = item.dataset.filepath;
+			fetch('/api/removetag', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePath: filePath, tag: tagName })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('✅ Tag removed: ' + tagName);
+					updateTagsDisplay(item, data.tags);
+				}
+			})
+			.catch(err => console.error('Error removing tag:', err));
+		}
+
+		function updateTagsDisplay(item, tags) {
+			const container = item.querySelector('.tags-display');
+			container.innerHTML = '';
+			if (tags.length === 0) {
+				container.innerHTML = '<span style="color: #737373; font-size: 14px;">No tags</span>';
+			} else {
+				tags.forEach(tag => {
+					const a = document.createElement('a');
+					a.href = '/tag/' + encodeURIComponent(tag);
+					a.className = 'tag';
+					a.setAttribute('data-tag', tag);
+					a.textContent = tag;
+					a.onclick = (e) => e.stopPropagation();
+					container.appendChild(a);
+				});
+			}
+			attachTagListeners(item);
+		}
+
+		function attachTagListeners(item) {
+			item.querySelectorAll('.tag').forEach(tag => {
+				tag.addEventListener('contextmenu', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					contextMenuTag = this.getAttribute('data-tag');
+					const menu = document.getElementById('context-menu');
+					menu.style.display = 'block';
+					menu.style.left = e.pageX + 'px';
+					menu.style.top = e.pageY + 'px';
+					menu.dataset.item = item.dataset.index;
+				});
+			});
+		}
+
+		document.addEventListener('click', function() {
+			document.getElementById('context-menu').style.display = 'none';
+		});
+
+		document.getElementById('menu-delete').addEventListener('click', function() {
+			if (contextMenuTag) {
+				const menu = document.getElementById('context-menu');
+				const item = document.querySelector('[data-index="' + menu.dataset.item + '"]');
+				if (item) {
+					removeTag(item, contextMenuTag);
+				}
+			}
+			document.getElementById('context-menu').style.display = 'none';
+		});
+
+		document.getElementById('menu-goto').addEventListener('click', function() {
+			if (contextMenuTag) {
+				window.location.href = '/tag/' + encodeURIComponent(contextMenuTag);
+			}
+		});
+
+		document.addEventListener('keydown', function(e) {
+			console.log('KEYDOWN EVENT:', e.key, 'metaKey:', e.metaKey, 'ctrlKey:', e.ctrlKey);
+			// Don't intercept keystrokes while editing tags or comments
+			const activeElement = document.activeElement;
+			if (activeElement && (activeElement.classList.contains('tag-input') || activeElement.classList.contains('comment-edit'))) {
+				console.log('BLOCKED: editing tag or comment');
+				return;
+			}
+
+			// Don't intercept browser shortcuts (Cmd+L, Cmd+Plus, Cmd+Minus, etc.)
+			if (e.metaKey || e.ctrlKey) {
+				console.log('BLOCKED: meta or ctrl key');
+				return;
+			}
+
+			// Handle sort keys FIRST (works without selection)
+			if (e.key === 's' || e.key === 'S') {
+				console.log('S key detected! shiftKey:', e.shiftKey, 'key:', e.key);
+				e.preventDefault();
+				if (e.shiftKey) {
+					// Shift+S: reverse sort order (for name, date modes, size only)
+					if (sortMode === 'name' || sortMode === 'os_birth' || sortMode === 'os_mod' || sortMode === 'exif_create' || sortMode === 'exif_modify' || sortMode === 'size') {
+						sortReversed = !sortReversed;
+						localStorage.setItem('sortReversed', sortReversed.toString());
+
+						// Reload page with reversed parameter
+						const url = new URL(window.location);
+						if (sortMode !== 'name') {
+							url.searchParams.set('sort', sortMode);
+						}
+						if (sortReversed) {
+							url.searchParams.set('reversed', 'true');
+						} else {
+							url.searchParams.delete('reversed');
+						}
+						window.location.href = url.toString();
+					}
+				} else {
+					// S: cycle through sort modes
+					cycleSort();
+				}
+				return; // Don't process other handlers
+			}
+
+			// R: Toggle gallery random mode (for single file view navigation)
+			if (e.key === 'r' || e.key === 'R') {
+				e.preventDefault();
+				galleryRandomMode = !galleryRandomMode;
+				showNotification('🎲 Gallery Random Mode: ' + (galleryRandomMode ? 'ON' : 'OFF'));
+				// Show visual indicator
+				const indicator = document.getElementById('sort-indicator');
+				if (galleryRandomMode) {
+					indicator.textContent = '🎲 GALLERY RANDOM MODE: ON (opens files with random navigation)';
+					indicator.classList.add('active');
+					setTimeout(() => indicator.classList.remove('active'), 3000);
+				}
+				return;
+			}
+
+			// All other keys require a selected item
+			if (!selectedItem) return;
+
+			const tagInputContainer = selectedItem.querySelector('.tag-input-container');
+			const tagInput = selectedItem.querySelector('.tag-input');
+
+			const currentIndex = items.indexOf(selectedItem);
+
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				const nextIndex = (currentIndex + 1) % items.length;
+				selectItem(items[nextIndex]);
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				const prevIndex = (currentIndex - 1 + items.length) % items.length;
+				selectItem(items[prevIndex]);
+			} else if (e.key === ' ') {
+				e.preventDefault();
+				// Space bar: toggle current selected item into multi-selection
+				toggleMultiSelect(selectedItem);
+			} else if (e.key === 'Enter') {
+				e.preventDefault();
+				navigateToView();
+			} else if (e.key === 't' || e.key === 'T') {
+				e.preventDefault();
+				tagInputContainer.classList.add('active');
+				tagInput.focus();
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				clearMultiSelection();
+			} else if (e.key === 'c' || e.key === 'C') {
+				e.preventDefault();
+				// C key: edit comment on selected file
+				enableCommentEditing(selectedItem);
+			} else if (e.key === 'x') {
+				e.preventDefault();
+				console.log('x key pressed! selectedItem:', selectedItem);
+				// x key: delete selected file (with modal)
+				showDeleteModal(selectedItem);
+			} else if (e.key === 'X') {
+				// Shift+X = instant delete (skip modal for volume operations)
+				e.preventDefault();
+				console.log('Shift+X pressed! Instant delete');
+				fileToDelete = selectedItem;
+				confirmDelete();
+			} else if (e.key === 'l' || e.key === 'L') {
+				e.preventDefault();
+				if (multiSelectedItems.size > 0) {
+					addTagToMultiple('❤️');
+				} else {
+					addTag(selectedItem, '❤️');
+				}
+			} else if (starRatings[e.key]) {
+				e.preventDefault();
+				if (multiSelectedItems.size > 0) {
+					addTagToMultiple(starRatings[e.key]);
+				} else {
+					addTag(selectedItem, starRatings[e.key]);
+				}
+			}
+		});
+
+		document.querySelectorAll('.tag-input').forEach(input => {
+			let selectedAutocompleteIndex = -1;
+
+			input.addEventListener('input', function() {
+				const value = this.value.toLowerCase();
+				const autocomplete = this.parentElement.querySelector('.autocomplete');
+
+				if (!value) {
+					autocomplete.innerHTML = '';
+					return;
+				}
+
+				const matches = allTags.filter(t => t.toLowerCase().includes(value));
+				autocomplete.innerHTML = '';
+				selectedAutocompleteIndex = -1;
+
+				matches.forEach((tag, idx) => {
+					const div = document.createElement('div');
+					div.className = 'autocomplete-item';
+					div.textContent = tag;
+					div.addEventListener('click', () => {
+						const item = this.closest('.item');
+						if (multiSelectedItems.size > 0) {
+							addTagToMultiple(tag);
+						} else {
+							addTag(item, tag);
+						}
+						this.value = '';
+						autocomplete.innerHTML = '';
+					});
+					autocomplete.appendChild(div);
+				});
+			});
+
+			input.addEventListener('keydown', function(e) {
+				const autocomplete = this.parentElement.querySelector('.autocomplete');
+				const items = autocomplete.querySelectorAll('.autocomplete-item');
+
+				if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					selectedAutocompleteIndex = Math.min(selectedAutocompleteIndex + 1, items.length - 1);
+					updateAutocompleteSelection(items, selectedAutocompleteIndex);
+				} else if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					selectedAutocompleteIndex = Math.max(selectedAutocompleteIndex - 1, -1);
+					updateAutocompleteSelection(items, selectedAutocompleteIndex);
+				} else if (e.key === 'Enter') {
+					e.preventDefault();
+					const item = this.closest('.item');
+					if (selectedAutocompleteIndex >= 0 && items[selectedAutocompleteIndex]) {
+						const tag = items[selectedAutocompleteIndex].textContent;
+						if (multiSelectedItems.size > 0) {
+							addTagToMultiple(tag);
+						} else {
+							addTag(item, tag);
+						}
+					} else if (this.value.trim()) {
+						const tag = this.value.trim();
+						if (multiSelectedItems.size > 0) {
+							addTagToMultiple(tag);
+						} else {
+							addTag(item, tag);
+						}
+					}
+					this.value = '';
+					autocomplete.innerHTML = '';
+				} else if (e.key === 'Escape') {
+					this.value = '';
+					autocomplete.innerHTML = '';
+					this.parentElement.classList.remove('active');
+				}
+			});
+		});
+
+		function updateAutocompleteSelection(items, index) {
+			items.forEach((item, idx) => {
+				item.classList.toggle('selected', idx === index);
+			});
+			if (index >= 0 && items[index]) {
+				items[index].scrollIntoView({ block: 'nearest' });
+			}
+		}
+
+		// Lazy loading for videos using Intersection Observer
+		const videoObserver = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const placeholder = entry.target;
+					const videoSrc = placeholder.dataset.videoSrc;
+
+					// Create video element
+					const video = document.createElement('video');
+					video.src = videoSrc;
+					video.className = 'preview';
+					video.controls = true;
+					video.muted = true;
+
+					// Replace placeholder with actual video
+					placeholder.replaceWith(video);
+
+					// Stop observing this element
+					videoObserver.unobserve(placeholder);
+				}
+			});
+		}, {
+			rootMargin: '50px' // Start loading 50px before entering viewport
+		});
+
+		// Observe all lazy video placeholders
+		document.querySelectorAll('.lazy-video').forEach(placeholder => {
+			videoObserver.observe(placeholder);
+		});
+
+		// ============================================================================
+		// COMMENT EDITING FUNCTIONS
+		// ============================================================================
+
+		function enableCommentEditing(item) {
+			// Disable any existing editing
+			disableAllCommentEditing();
+
+			const container = item.querySelector('.comment-container');
+			const display = container.querySelector('.comment-display');
+			const textarea = container.querySelector('.comment-edit');
+
+			// Get current comment
+			const currentComment = item.dataset.comment || '';
+
+			// Show textarea, hide display
+			display.style.display = 'none';
+			textarea.style.display = 'block';
+			textarea.value = currentComment;
+			textarea.focus();
+
+			currentEditingComment = item;
+
+			// Save on blur
+			textarea.addEventListener('blur', () => saveComment(item), { once: true });
+
+			// Save on Ctrl+Enter or Cmd+Enter
+			textarea.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+					e.preventDefault();
+					saveComment(item);
+				}
+				// Cancel on Escape
+				if (e.key === 'Escape') {
+					e.preventDefault();
+					cancelCommentEdit(item);
+				}
+			});
+		}
+
+		function disableAllCommentEditing() {
+			document.querySelectorAll('.comment-edit').forEach(textarea => {
+				textarea.style.display = 'none';
+			});
+			document.querySelectorAll('.comment-display').forEach(display => {
+				display.style.display = 'block';
+			});
+			currentEditingComment = null;
+		}
+
+		function cancelCommentEdit(item) {
+			const container = item.querySelector('.comment-container');
+			const display = container.querySelector('.comment-display');
+			const textarea = container.querySelector('.comment-edit');
+
+			textarea.style.display = 'none';
+			display.style.display = 'block';
+			currentEditingComment = null;
+		}
+
+		async function saveComment(item) {
+			const container = item.querySelector('.comment-container');
+			const display = container.querySelector('.comment-display');
+			const textarea = container.querySelector('.comment-edit');
+			const filepath = item.dataset.filepath;
+			const newComment = textarea.value.trim();
+
+			// Show saving state
+			container.classList.add('comment-saving');
+
+			try {
+				const response = await fetch('/api/comment', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						filepath: filepath,
+						comment: newComment
+					})
+				});
+
+				if (!response.ok) {
+					throw new Error('Failed to update comment');
+				}
+
+				// Update UI
+				item.dataset.comment = newComment;
+				display.textContent = newComment;
+
+				// Update empty state
+				if (newComment === '') {
+					display.classList.add('empty');
+				} else {
+					display.classList.remove('empty');
+				}
+
+				console.log('Comment saved successfully');
+
+			} catch (error) {
+				console.error('Error saving comment:', error);
+				alert('Failed to save comment. Please try again.');
+			} finally {
+				// Hide textarea, show display
+				container.classList.remove('comment-saving');
+				textarea.style.display = 'none';
+				display.style.display = 'block';
+				currentEditingComment = null;
+			}
+		}
+
+		// Comment click to edit
+		document.addEventListener('click', (e) => {
+			if (e.target.closest('.comment-display')) {
+				const item = e.target.closest('.item');
+				if (item) {
+					enableCommentEditing(item);
+				}
+			}
+		});
+
+		// ============================================================================
+		// RESCAN FUNCTIONALITY
+		// ============================================================================
+
+		let scanStatusInterval = null;
+
+		async function triggerRescan() {
+			const button = document.getElementById('rescanButton');
+			const buttonText = document.getElementById('rescanText');
+
+			// Don't trigger if already scanning
+			if (button.classList.contains('scanning')) {
+				return;
+			}
+
+			try {
+				const response = await fetch('/api/rescan', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+
+				const data = await response.json();
+
+				if (data.success) {
+					// Set to scanning state
+					button.classList.add('scanning');
+					button.classList.remove('completed');
+					buttonText.textContent = 'Scanning...';
+
+					// Start polling for status
+					startScanStatusPolling();
+				} else {
+					console.error('Rescan failed:', data.message);
+					alert('Scan already in progress');
+				}
+			} catch (error) {
+				console.error('Error triggering rescan:', error);
+				alert('Failed to start rescan');
+			}
+		}
+
+		function startScanStatusPolling() {
+			// Clear any existing interval
+			if (scanStatusInterval) {
+				clearInterval(scanStatusInterval);
+			}
+
+			// Poll every 500ms
+			scanStatusInterval = setInterval(async () => {
+				try {
+					const response = await fetch('/api/scanstatus');
+					const data = await response.json();
+
+					const button = document.getElementById('rescanButton');
+					const buttonText = document.getElementById('rescanText');
+
+					if (data.completed) {
+						// Scan completed - transition to green
+						button.classList.remove('scanning');
+						button.classList.add('completed');
+						buttonText.textContent = 'Scan Complete!';
+
+						// Stop polling
+						clearInterval(scanStatusInterval);
+						scanStatusInterval = null;
+
+						// Auto-reload page after 2 seconds to show updated files
+						setTimeout(() => {
+							window.location.reload();
+						}, 2000);
+					} else if (!data.isScanning) {
+						// Not scanning and not completed - reset
+						button.classList.remove('scanning');
+						button.classList.remove('completed');
+						buttonText.textContent = 'Rescan';
+						clearInterval(scanStatusInterval);
+						scanStatusInterval = null;
+					}
+				} catch (error) {
+					console.error('Error polling scan status:', error);
+					// Don't stop polling on error - server might be busy
+				}
+			}, 500);
+		}
+
+		// ============================================================================
+		// BACKGROUND FRESHNESS SCAN PROGRESS
+		// ============================================================================
+
+		function pollScanProgress() {
+			fetch('/api/scan-progress')
+				.then(r => r.json())
+				.then(data => {
+					const el = document.getElementById('scan-progress');
+					if (el && data.isRunning) {
+						el.style.display = 'inline';
+						el.textContent = `Refreshing: ${data.checked.toLocaleString()} / ${data.total.toLocaleString()}`;
+					} else if (el) {
+						el.style.display = 'none';
+					}
+				})
+				.catch(() => {
+					// Silently ignore errors
+				});
+		}
+
+		// Poll scan progress every 2 seconds
+		setInterval(pollScanProgress, 2000);
+		// Initial poll
+		pollScanProgress();
+
+		// ============================================================================
+		// SHUTDOWN MODAL AND FUNCTIONALITY
+		// ============================================================================
+
+		function showShutdownModal() {
+			document.getElementById('shutdownModal').classList.add('show');
+		}
+
+		function hideShutdownModal() {
+			document.getElementById('shutdownModal').classList.remove('show');
+		}
+
+		async function confirmShutdown() {
+			try {
+				const response = await fetch('/api/shutdown', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+
+				if (response.ok) {
+					// Update modal to show shutdown message
+					const modal = document.querySelector('.modal');
+					modal.innerHTML = `
+						<div class="modal-title">👋 Shutting Down</div>
+						<div class="modal-message">Media server is shutting down...</div>
+					`;
+
+					// Give server time to shutdown, then close window
+					setTimeout(() => {
+						window.close();
+					}, 2000);
+				} else {
+					alert('Failed to shutdown server. Please try again.');
+					hideShutdownModal();
+				}
+			} catch (error) {
+				console.error('Error shutting down server:', error);
+				// Server already shutdown - update UI
+				const modal = document.querySelector('.modal');
+				modal.innerHTML = `
+					<div class="modal-title">✅ Server Stopped</div>
+					<div class="modal-message">Media server has been shut down.</div>
+				`;
+				setTimeout(() => {
+					window.close();
+				}, 1500);
+			}
+		}
+
+		// Close modal when clicking outside of it
+		document.addEventListener('DOMContentLoaded', function() {
+			document.getElementById('shutdownModal').addEventListener('click', function(e) {
+				if (e.target === this) {
+					hideShutdownModal();
+				}
+			});
+		});
+
+		// ESC key to close modal
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				// Only close shutdown modal if no comment is being edited
+				if (!currentEditingComment) {
+					hideShutdownModal();
+					hideDeleteModal();
+				}
+			}
+		});
+
+		// ============================================================================
+		// DELETE MODAL AND FUNCTIONALITY
+		// ============================================================================
+
+		let fileToDelete = null;
+
+		function showDeleteModal(item) {
+			fileToDelete = item;
+			const filename = item.dataset.filepath;
+			document.getElementById('deleteFilename').textContent = filename;
+			document.getElementById('deleteModal').classList.add('show');
+		}
+
+		function hideDeleteModal() {
+			document.getElementById('deleteModal').classList.remove('show');
+			fileToDelete = null;
+		}
+
+		async function confirmDelete() {
+			if (!fileToDelete) return;
+
+			const filepath = fileToDelete.dataset.filepath;
+
+			try {
+				const response = await fetch('/api/deletefile', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ filePath: filepath })
+				});
+
+				if (response.ok) {
+					showNotification('✅ File deleted');
+
+					// Remove item from DOM and items array
+					const currentIndex = items.indexOf(fileToDelete);
+					fileToDelete.remove();
+					items = Array.from(document.getElementById('files-gallery').querySelectorAll('.item'));
+
+					// Select next item (or previous if was last)
+					if (items.length > 0) {
+						const nextIndex = Math.min(currentIndex, items.length - 1);
+						selectItem(items[nextIndex]);
+					}
+
+					hideDeleteModal();
+				} else {
+					const data = await response.json();
+					alert('Failed to delete file: ' + (data.error || 'Unknown error'));
+					hideDeleteModal();
+				}
+			} catch (error) {
+				console.error('Error deleting file:', error);
+				alert('Failed to delete file: ' + error.message);
+				hideDeleteModal();
+			}
+		}
+
+		// Close modal when clicking outside
+		document.addEventListener('DOMContentLoaded', function() {
+			document.getElementById('deleteModal').addEventListener('click', function(e) {
+				if (e.target === this) {
+					hideDeleteModal();
+				}
+			});
+		});
+
+		// ===========================================================================
+		// SYNTHETIC CATEGORY EDIT FUNCTIONALITY
+		// ===========================================================================
+
+		function editSyntheticCategory() {
+			const currentTag = '{{.Tag}}';
+			if (!currentTag.startsWith('🔍 ')) return;
+
+			const query = currentTag.substring(2); // Remove "🔍 " prefix
+			const searchInput = document.getElementById('searchInput');
+			searchInput.value = query;
+			showSearchModal();
+		}
+
+		function showSearchModal() {
+			document.getElementById('searchModal').classList.add('show');
+			document.getElementById('searchInput').focus();
+		}
+
+		function hideSearchModal() {
+			document.getElementById('searchModal').classList.remove('show');
+			document.getElementById('searchInput').value = '';
+			document.getElementById('searchError').classList.remove('show');
+			document.getElementById('searchInput').classList.remove('error');
+		}
+
+		async function updateSyntheticCategory() {
+			const query = document.getElementById('searchInput').value.trim();
+			const searchInput = document.getElementById('searchInput');
+			const searchError = document.getElementById('searchError');
+
+			if (!query) {
+				searchInput.classList.add('error');
+				searchError.textContent = 'Please enter a search query';
+				searchError.classList.add('show');
+				return;
+			}
+
+			try {
+				// Validate search query
+				const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+				const data = await response.json();
+
+				if (!response.ok || data.error) {
+					searchInput.classList.add('error');
+					searchError.textContent = data.error || 'Invalid search query';
+					searchError.classList.add('show');
+					return;
+				}
+
+				if (!data.files || data.files.length === 0) {
+					searchInput.classList.add('error');
+					searchError.textContent = 'No files found matching your query';
+					searchError.classList.add('show');
+					return;
+				}
+
+				// Navigate to updated synthetic category
+				const syntheticTag = '🔍 ' + query;
+				window.location.href = '/tag/' + encodeURIComponent(syntheticTag);
+			} catch (error) {
+				console.error('Search error:', error);
+				searchInput.classList.add('error');
+				searchError.textContent = 'Search failed: ' + error.message;
+				searchError.classList.add('show');
+			}
+		}
+	</script>
+
+	<!-- Search Modal for Synthetic Category Editing -->
+	<div class="modal-overlay" id="searchModal" onclick="if(event.target===this) hideSearchModal()">
+		<div class="modal">
+			<div class="modal-title">🔍 Edit Search Query</div>
+			<div class="modal-message">Modify your search query to update the category</div>
+			<input type="text" id="searchInput" class="search-input" placeholder="Enter search query..." style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #444; border-radius: 6px; background: #2a2a2a; color: #fff; margin-bottom: 10px;">
+			<div id="searchError" class="search-error" style="color: #FF3B30; font-size: 14px; margin-top: 8px; display: none;"></div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideSearchModal()">Cancel</button>
+				<button class="modal-button confirm" style="background: #007AFF;" onclick="updateSyntheticCategory()">Update</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Shutdown Confirmation Modal -->
+	<div class="modal-overlay" id="shutdownModal">
+		<div class="modal">
+			<div class="modal-title">⏻ Shutdown Server</div>
+			<div class="modal-message">Do you really want to quit this media server?</div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideShutdownModal()">Cancel</button>
+				<button class="modal-button confirm" onclick="confirmShutdown()">Shutdown</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Delete File Confirmation Modal -->
+	<div class="modal-overlay" id="deleteModal">
+		<div class="modal">
+			<div class="modal-title">🗑️ Delete File</div>
+			<div class="modal-message" id="deleteMessage">
+				Are you sure you want to delete this file?
+				<div style="margin-top: 12px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; color: #666; font-size: 13px;" id="deleteFilename"></div>
+			</div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideDeleteModal()">Cancel</button>
+				<button class="modal-button confirm" onclick="confirmDelete()">Delete</button>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

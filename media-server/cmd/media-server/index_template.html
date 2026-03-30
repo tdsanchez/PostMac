@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Media Server - Categories</title>
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 100px 40px 40px 40px; background: #000; color: #fff; }
+
+		/* Floating Header */
+		.header { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #333; z-index: 1000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+		.title-section { flex: 1; }
+		h1 { color: #fff; margin-bottom: 5px; }
+		.stats { color: #B3B3B3; font-size: 14px; }
+
+		.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+		.category-card { background: #1e1e1e; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; text-decoration: none; display: block; color: #fff; border: 1px solid #333; }
+		.category-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.7); border-color: #555; }
+		.category-card:focus { outline: 3px solid #4DA3FF; outline-offset: 2px; transform: translateY(-4px); box-shadow: 0 4px 12px rgba(77,163,255,0.3); }
+		.category-card.selected { box-shadow: 0 0 0 3px #4DA3FF; transform: translateY(-4px); }
+		.preview-wrapper { cursor: pointer; position: relative; }
+		.preview-wrapper:hover::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(77,163,255,0.15); pointer-events: none; }
+		.preview { width: 100%; height: 300px; object-fit: cover; background: #2a2a2a; display: block; }
+		.preview-icon { width: 100%; height: 300px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 72px; color: #666; }
+		.preview-placeholder { width: 100%; height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 72px; color: white; position: relative; }
+		.preview-placeholder::after { content: 'Loading...'; position: absolute; bottom: 20px; font-size: 14px; opacity: 0.8; }
+		.category-info { padding: 20px; background: #1e1e1e; }
+		.category-name { font-weight: 600; font-size: 20px; margin-bottom: 8px; color: #E0E0E0; }
+		.category-count { color: #B3B3B3; font-size: 16px; }
+		.shutdown-button {
+			background: #FF3B30;
+			color: white;
+			border: none;
+			padding: 12px 20px;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 500;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			transition: background 0.2s, transform 0.1s;
+			box-shadow: 0 2px 4px rgba(255, 59, 48, 0.3);
+		}
+		.shutdown-button:hover {
+			background: #FF2D21;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgba(255, 59, 48, 0.4);
+		}
+		.shutdown-button:active {
+			transform: translateY(0);
+		}
+		.power-icon {
+			font-size: 20px;
+		}
+		.search-button {
+			background: #007AFF;
+			color: white;
+			border: none;
+			padding: 12px 20px;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 500;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			transition: background 0.2s, transform 0.1s;
+			box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
+		}
+		.search-button:hover {
+			background: #0051D5;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgba(0, 122, 255, 0.4);
+		}
+		.search-button:active {
+			transform: translateY(0);
+		}
+
+		/* Modal */
+		.modal-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.7);
+			z-index: 10000;
+			align-items: center;
+			justify-content: center;
+		}
+		.modal-overlay.show {
+			display: flex;
+		}
+		.modal {
+			background: #222;
+			border-radius: 12px;
+			padding: 30px;
+			max-width: 400px;
+			width: 90%;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+			border: 1px solid #444;
+		}
+		.modal-title {
+			font-size: 20px;
+			font-weight: 600;
+			margin-bottom: 16px;
+			color: #fff;
+		}
+		.modal-message {
+			font-size: 16px;
+			color: #B3B3B3;
+			margin-bottom: 24px;
+			line-height: 1.5;
+		}
+		.modal-buttons {
+			display: flex;
+			gap: 12px;
+			justify-content: flex-end;
+		}
+		.modal-button {
+			padding: 10px 20px;
+			border: none;
+			border-radius: 6px;
+			font-size: 15px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: background 0.2s;
+		}
+		.modal-button.cancel {
+			background: #444;
+			color: #fff;
+		}
+		.modal-button.cancel:hover {
+			background: #555;
+		}
+		.modal-button.confirm {
+			background: #FF3B30;
+			color: white;
+		}
+		.modal-button.confirm:hover {
+			background: #FF2D21;
+		}
+
+		/* Search Modal */
+		.search-input {
+			width: 100%;
+			padding: 12px;
+			font-size: 16px;
+			border: 2px solid #444;
+			border-radius: 6px;
+			margin-bottom: 12px;
+			box-sizing: border-box;
+			background: #1e1e1e;
+			color: #fff;
+		}
+		.search-input:focus {
+			outline: none;
+			border-color: #007AFF;
+		}
+		.search-input.error {
+			border-color: #FF3B30;
+		}
+		.search-help {
+			font-size: 13px;
+			color: #8E8E93;
+			margin-bottom: 16px;
+			line-height: 1.5;
+		}
+		.search-help code {
+			background: #F2F2F7;
+			padding: 2px 6px;
+			border-radius: 3px;
+			font-family: monospace;
+		}
+		.search-error {
+			color: #FF3B30;
+			font-size: 14px;
+			margin-bottom: 12px;
+			display: none;
+		}
+		.search-error.show {
+			display: block;
+		}
+		.search-autocomplete {
+			background: rgba(0,0,0,0.95);
+			border: 1px solid #777;
+			border-radius: 6px;
+			margin-top: 5px;
+			max-height: 200px;
+			overflow-y: auto;
+			display: none;
+		}
+		.search-autocomplete.show {
+			display: block;
+		}
+		.search-autocomplete-item {
+			padding: 10px 14px;
+			cursor: pointer;
+			font-size: 15px;
+			min-height: 44px;
+			display: flex;
+			align-items: center;
+			color: white;
+		}
+		.search-autocomplete-item:hover {
+			background: rgba(255,255,255,0.1);
+		}
+		.search-autocomplete-item.selected {
+			background: rgba(0,122,255,0.3);
+		}
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="title-section">
+			<h1>🚀 Media Server</h1>
+			<div class="stats">📂 {{.TotalFiles}} files in {{.TotalCategories}} categories</div>
+		</div>
+		<div style="display: flex; gap: 12px;">
+			<button class="search-button" onclick="showSearchModal()">
+				<span>🔍</span>
+				<span>Search</span>
+			</button>
+			<button class="shutdown-button" onclick="showShutdownModal()">
+				<span class="power-icon">⏻</span>
+				<span>Shutdown</span>
+			</button>
+		</div>
+	</div>
+	<div class="gallery">
+		{{range .Previews}}
+		<div class="category-card" data-category="{{urlEncode .Tag}}" data-preview-file="{{urlEncode .PreviewFile.Path}}" tabindex="0">
+			<div class="preview-wrapper" data-href="/view/{{urlEncode .Tag}}?file={{urlEncode .PreviewFile.Path}}">
+			{{if or (hasSuffix .PreviewFile.Name ".jpg") (hasSuffix .PreviewFile.Name ".jpeg") (hasSuffix .PreviewFile.Name ".png") (hasSuffix .PreviewFile.Name ".gif") (hasSuffix .PreviewFile.Name ".webp")}}
+				<img src="/file/{{urlEncode .PreviewFile.Path}}" class="preview" alt="{{.Tag}}" loading="lazy">
+			{{else if or (hasSuffix .PreviewFile.Name ".mp4") (hasSuffix .PreviewFile.Name ".mov") (hasSuffix .PreviewFile.Name ".m4v")}}
+				<div class="preview-placeholder lazy-video" data-video-src="/file/{{urlEncode .PreviewFile.Path}}">🎬</div>
+			{{else if hasSuffix .PreviewFile.Name ".pdf"}}
+				<div class="preview-icon">📑</div>
+			{{else if isTextFile .PreviewFile.Name}}
+				<div class="preview-icon">📝</div>
+			{{else if isHTMLFile .PreviewFile.Name}}
+				<div class="preview-icon">🌐</div>
+			{{else if isConvertibleFile .PreviewFile.Name}}
+				<div class="preview-icon">📃</div>
+			{{else}}
+				<div class="preview-icon">📄</div>
+			{{end}}
+			</div>
+			<div class="category-info">
+				<div class="category-name">{{.Tag}}</div>
+				<div class="category-count">{{.Count}} files</div>
+			</div>
+		</div>
+		{{end}}
+	</div>
+
+	<!-- Shutdown Confirmation Modal -->
+	<div class="modal-overlay" id="shutdownModal">
+		<div class="modal">
+			<div class="modal-title">⏻ Shutdown Server</div>
+			<div class="modal-message">Do you really want to quit this media server?</div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideShutdownModal()">Cancel</button>
+				<button class="modal-button confirm" onclick="confirmShutdown()">Shutdown</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal-overlay" id="searchModal" onclick="if(event.target===this) hideSearchModal()">
+		<div class="modal">
+			<div class="modal-title">🔍 Boolean Tag Search</div>
+			<div class="search-help">
+				Examples: <code>Landscape AND 5-★★★★★</code>, <code>Portrait OR Headshot</code>, <code>Nature NOT Posted</code>
+			</div>
+			<input type="text" id="searchInput" class="search-input" placeholder="Type to see tag suggestions..." autofocus>
+			<div id="searchAutocomplete" class="search-autocomplete"></div>
+			<div id="searchError" class="search-error"></div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideSearchModal()">Cancel</button>
+				<button class="modal-button confirm" style="background: #34C759;" onclick="createSyntheticCategory()">Create Category</button>
+				<button class="modal-button confirm" style="background: #007AFF;" onclick="executeSearch()">Search</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// ============================================================================
+		// KEYBOARD NAVIGATION FOR CATEGORY CARDS
+		// ============================================================================
+
+		let categoryCards = [];
+		let selectedCard = null;
+
+		function selectCard(card) {
+			if (selectedCard) {
+				selectedCard.classList.remove('selected');
+			}
+			selectedCard = card;
+			selectedCard.classList.add('selected');
+			selectedCard.focus(); // Focus the card so Enter key handler fires
+			selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+
+		// Add keyboard navigation: Arrow keys + Enter
+		document.addEventListener('DOMContentLoaded', function() {
+			categoryCards = Array.from(document.querySelectorAll('.category-card'));
+
+			categoryCards.forEach(card => {
+				// Click on preview wrapper goes to single image view in new tab
+				const previewWrapper = card.querySelector('.preview-wrapper');
+				if (previewWrapper) {
+					previewWrapper.addEventListener('click', function(e) {
+						e.stopPropagation(); // Prevent card click
+						const href = this.getAttribute('data-href');
+						if (href) {
+							window.open(href, '_blank');
+						}
+					});
+				}
+
+				// Click on card (outside preview) goes to category/gallery view
+				card.addEventListener('click', function(e) {
+					// Only if not clicking preview wrapper
+					if (!e.target.closest('.preview-wrapper')) {
+						const category = this.getAttribute('data-category');
+						if (category) {
+							window.location.href = '/tag/' + category;
+						}
+					}
+					selectCard(this);
+				});
+
+				// Enter key navigates to gallery view
+				card.addEventListener('keydown', function(e) {
+
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						const category = this.getAttribute('data-category');
+						if (category) {
+							window.location.href = '/tag/' + category;
+						}
+					}
+					
+				});
+			});
+
+			// Auto-select first card for immediate keyboard navigation
+			if (categoryCards.length > 0) {
+				selectCard(categoryCards[0]);
+			}
+		});
+
+		// Global keyboard handler for arrow navigation
+		document.addEventListener('keydown', function(e) {
+			if (!selectedCard) return;
+
+			const currentIndex = categoryCards.indexOf(selectedCard);
+
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				const nextIndex = (currentIndex + 1) % categoryCards.length;
+				selectCard(categoryCards[nextIndex]);
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				const prevIndex = (currentIndex - 1 + categoryCards.length) % categoryCards.length;
+				selectCard(categoryCards[prevIndex]);
+			}
+		});
+
+		// Lazy loading for videos using Intersection Observer
+		const videoObserver = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const placeholder = entry.target;
+					const videoSrc = placeholder.dataset.videoSrc;
+
+					// Create video element
+					const video = document.createElement('video');
+					video.src = videoSrc;
+					video.className = 'preview';
+					video.controls = true;
+					video.muted = true;
+
+					// Replace placeholder with actual video
+					placeholder.replaceWith(video);
+
+					// Stop observing this element
+					videoObserver.unobserve(placeholder);
+				}
+			});
+		}, {
+			rootMargin: '50px' // Start loading 50px before entering viewport
+		});
+
+		// Observe all lazy video placeholders
+		document.querySelectorAll('.lazy-video').forEach(placeholder => {
+			videoObserver.observe(placeholder);
+		});
+
+		// ============================================================================
+		// SHUTDOWN MODAL AND FUNCTIONALITY
+		// ============================================================================
+
+		function showShutdownModal() {
+			document.getElementById('shutdownModal').classList.add('show');
+		}
+
+		function hideShutdownModal() {
+			document.getElementById('shutdownModal').classList.remove('show');
+		}
+
+		async function confirmShutdown() {
+			try {
+				const response = await fetch('/api/shutdown', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				});
+
+				if (response.ok) {
+					// Update modal to show shutdown message
+					const modal = document.querySelector('.modal');
+					modal.innerHTML = `
+						<div class="modal-title">👋 Shutting Down</div>
+						<div class="modal-message">Media server is shutting down...</div>
+					`;
+
+					// Give server time to shutdown, then close window
+					setTimeout(() => {
+						window.close();
+					}, 2000);
+				} else {
+					alert('Failed to shutdown server. Please try again.');
+					hideShutdownModal();
+				}
+			} catch (error) {
+				console.error('Error shutting down server:', error);
+				// Server already shutdown - update UI
+				const modal = document.querySelector('.modal');
+				modal.innerHTML = `
+					<div class="modal-title">✅ Server Stopped</div>
+					<div class="modal-message">Media server has been shut down.</div>
+				`;
+				setTimeout(() => {
+					window.close();
+				}, 1500);
+			}
+		}
+
+		// ============================================================================
+		// SEARCH MODAL
+		// ============================================================================
+
+		let searchAutocompleteIndex = -1;
+		let allTagsForSearch = [];
+
+		// Fetch all tags for autocomplete
+		fetch('/api/alltags')
+			.then(res => res.json())
+			.then(tags => {
+				allTagsForSearch = tags;
+			})
+			.catch(err => console.error('Failed to load tags for search autocomplete:', err));
+
+		function showSearchModal() {
+			document.getElementById('searchModal').classList.add('show');
+			document.getElementById('searchInput').value = '';
+			document.getElementById('searchError').classList.remove('show');
+			document.getElementById('searchInput').classList.remove('error');
+			document.getElementById('searchAutocomplete').innerHTML = '';
+			document.getElementById('searchAutocomplete').classList.remove('show');
+			searchAutocompleteIndex = -1;
+			// Focus input after modal is shown
+			setTimeout(() => {
+				document.getElementById('searchInput').focus();
+			}, 100);
+		}
+
+		function hideSearchModal() {
+			document.getElementById('searchModal').classList.remove('show');
+			document.getElementById('searchAutocomplete').innerHTML = '';
+			document.getElementById('searchAutocomplete').classList.remove('show');
+		}
+
+		async function createSyntheticCategory() {
+			const query = document.getElementById('searchInput').value.trim();
+			const searchInput = document.getElementById('searchInput');
+			const searchError = document.getElementById('searchError');
+
+			if (!query) {
+				searchInput.classList.add('error');
+				searchError.textContent = 'Please enter a search query';
+				searchError.classList.add('show');
+				return;
+			}
+
+			try {
+				// Validate search query
+				const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+				const data = await response.json();
+
+				if (!response.ok || data.error) {
+					searchInput.classList.add('error');
+					searchError.textContent = data.error || 'Invalid search query';
+					searchError.classList.add('show');
+					return;
+				}
+
+				if (!data.files || data.files.length === 0) {
+					searchInput.classList.add('error');
+					searchError.textContent = 'No files found matching your query';
+					searchError.classList.add('show');
+					return;
+				}
+
+				// Navigate to synthetic category gallery view
+				const syntheticTag = '🔍 ' + query;
+				window.location.href = '/tag/' + encodeURIComponent(syntheticTag);
+			} catch (error) {
+				console.error('Search error:', error);
+				searchInput.classList.add('error');
+				searchError.textContent = 'Search failed: ' + error.message;
+				searchError.classList.add('show');
+			}
+		}
+
+		async function executeSearch() {
+			const query = document.getElementById('searchInput').value.trim();
+			const searchInput = document.getElementById('searchInput');
+			const searchError = document.getElementById('searchError');
+
+			if (!query) {
+				searchInput.classList.add('error');
+				searchError.textContent = 'Please enter a search query';
+				searchError.classList.add('show');
+				return;
+			}
+
+			try {
+				const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+				const data = await response.json();
+
+				if (!response.ok || data.error) {
+					searchInput.classList.add('error');
+					searchError.textContent = data.error || 'Search failed';
+					searchError.classList.add('show');
+					return;
+				}
+
+				// Success - navigate to search results
+				if (data.files && data.files.length > 0) {
+					const firstFile = data.files[0];
+
+					// Find first real tag on the file (use "All" as fallback)
+					const realTag = firstFile.Tags && firstFile.Tags.length > 0
+						? firstFile.Tags[0]
+						: 'All';
+
+					// Store search results in localStorage for single file view navigation
+					localStorage.setItem('searchResults', JSON.stringify(data.files.map(f => f.Path)));
+					localStorage.setItem('searchQuery', query);
+
+					// Navigate to real category with search context
+					window.location.href = `/view/${encodeURIComponent(realTag)}?file=${encodeURIComponent(firstFile.Path)}&search=${encodeURIComponent(query)}`;
+				} else {
+					searchInput.classList.add('error');
+					searchError.textContent = 'No files found matching your query';
+					searchError.classList.add('show');
+				}
+			} catch (error) {
+				console.error('Search error:', error);
+				searchInput.classList.add('error');
+				searchError.textContent = 'Search failed: ' + error.message;
+				searchError.classList.add('show');
+			}
+		}
+
+		// Search input autocomplete
+		document.getElementById('searchInput').addEventListener('input', function() {
+			const searchInput = this;
+			const value = searchInput.value;
+			const autocompleteDiv = document.getElementById('searchAutocomplete');
+
+			// Clear error when user types
+			document.getElementById('searchError').classList.remove('show');
+			searchInput.classList.remove('error');
+
+			// Find the current word being typed (after last space or operator)
+			const cursorPos = searchInput.selectionStart;
+			const textBeforeCursor = value.substring(0, cursorPos);
+			const lastWordMatch = textBeforeCursor.match(/(\S+)$/);
+
+			if (!lastWordMatch) {
+				autocompleteDiv.innerHTML = '';
+				autocompleteDiv.classList.remove('show');
+				return;
+			}
+
+			const currentWord = lastWordMatch[1];
+			const wordStart = cursorPos - currentWord.length;
+
+			// Don't autocomplete operators
+			if (['AND', 'OR', 'NOT', 'and', 'or', 'not'].includes(currentWord)) {
+				autocompleteDiv.innerHTML = '';
+				autocompleteDiv.classList.remove('show');
+				return;
+			}
+
+			// Filter tags that match current word
+			const matches = allTagsForSearch.filter(tag =>
+				tag.toLowerCase().includes(currentWord.toLowerCase())
+			).slice(0, 10); // Limit to 10 suggestions
+
+			if (matches.length === 0) {
+				autocompleteDiv.innerHTML = '';
+				autocompleteDiv.classList.remove('show');
+				return;
+			}
+
+			// Show autocomplete suggestions
+			autocompleteDiv.innerHTML = '';
+			searchAutocompleteIndex = -1;
+
+			matches.forEach((tag, idx) => {
+				const div = document.createElement('div');
+				div.className = 'search-autocomplete-item';
+				div.textContent = tag;
+				div.addEventListener('click', () => {
+					// Auto-quote tags with spaces
+					const insertValue = tag.includes(' ') ? '"' + tag + '"' : tag;
+
+					// For multi-word tags, check if user has already typed the full tag
+					let actualWordStart = wordStart;
+					if (tag.includes(' ')) {
+						const textBefore = value.substring(0, cursorPos).toLowerCase();
+						const tagLower = tag.toLowerCase();
+
+						// Check if text before cursor ends with the tag (user typed it fully)
+						if (textBefore.endsWith(tagLower)) {
+							actualWordStart = cursorPos - tagLower.length;
+						}
+					}
+
+					const before = value.substring(0, actualWordStart);
+					const after = value.substring(cursorPos);
+					searchInput.value = before + insertValue + after;
+					searchInput.setSelectionRange(actualWordStart + insertValue.length, actualWordStart + insertValue.length);
+					autocompleteDiv.innerHTML = '';
+					autocompleteDiv.classList.remove('show');
+					searchInput.focus();
+				});
+				autocompleteDiv.appendChild(div);
+			});
+
+			autocompleteDiv.classList.add('show');
+		});
+
+		// Handle keyboard in search input (autocomplete navigation + search execution)
+		document.getElementById('searchInput').addEventListener('keydown', function(e) {
+			const autocompleteDiv = document.getElementById('searchAutocomplete');
+			const items = autocompleteDiv.querySelectorAll('.search-autocomplete-item');
+
+			// Prevent category navigation when modal is open
+			e.stopPropagation();
+
+			if (items.length > 0 && autocompleteDiv.classList.contains('show')) {
+				// Autocomplete is active
+				if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					searchAutocompleteIndex = Math.min(searchAutocompleteIndex + 1, items.length - 1);
+					updateSearchAutocompleteSelection(items);
+				} else if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					searchAutocompleteIndex = Math.max(searchAutocompleteIndex - 1, -1);
+					updateSearchAutocompleteSelection(items);
+				} else if (e.key === 'Tab') {
+					e.preventDefault();
+					if (searchAutocompleteIndex !== -1 && items[searchAutocompleteIndex]) {
+						items[searchAutocompleteIndex].click();
+					} else if (items[0]) {
+						items[0].click();
+					}
+				} else if (e.key === 'Enter') {
+					e.preventDefault();
+					if (searchAutocompleteIndex !== -1 && items[searchAutocompleteIndex]) {
+						items[searchAutocompleteIndex].click();
+					} else {
+						autocompleteDiv.innerHTML = '';
+						autocompleteDiv.classList.remove('show');
+						executeSearch();
+					}
+				} else if (e.key === 'Escape') {
+					e.preventDefault();
+					autocompleteDiv.innerHTML = '';
+					autocompleteDiv.classList.remove('show');
+					searchAutocompleteIndex = -1;
+				}
+			} else {
+				// No autocomplete active
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					executeSearch();
+				} else if (e.key === 'Escape') {
+					e.preventDefault();
+					hideSearchModal();
+				}
+			}
+		});
+
+		function updateSearchAutocompleteSelection(items) {
+			items.forEach((item, idx) => {
+				item.classList.toggle('selected', idx === searchAutocompleteIndex);
+			});
+			if (searchAutocompleteIndex !== -1 && items[searchAutocompleteIndex]) {
+				items[searchAutocompleteIndex].scrollIntoView({ block: 'nearest' });
+			}
+		}
+
+		// Close modal when clicking outside of it
+		document.getElementById('shutdownModal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				hideShutdownModal();
+			}
+		});
+
+		// Global keyboard handler for modals
+		document.addEventListener('keydown', function(e) {
+			const searchModalOpen = document.getElementById('searchModal').classList.contains('show');
+			const shutdownModalOpen = document.getElementById('shutdownModal').classList.contains('show');
+
+			// If search modal is open, let search input handle everything except ESC
+			if (searchModalOpen) {
+				if (e.key === 'Escape') {
+					hideSearchModal();
+				}
+				// Don't stop propagation - let search input handle arrow keys
+				return;
+			}
+
+			// Shutdown modal handling
+			if (e.key === 'Escape' && shutdownModalOpen) {
+				hideShutdownModal();
+			}
+
+			// '/' key to open search modal (only when not in input field)
+			if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+				e.preventDefault();
+				showSearchModal();
+			}
+		});
+	</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+---
+# Multipass-specific deployment tasks
+# Traditional Linux deployment: binary + systemd
+
+- name: Create service user
+  user:
+    name: media-server
+    system: yes
+    shell: /bin/false
+    create_home: no
+  tags: ['setup']
+
+- name: Create application directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: media-server
+    group: media-server
+    mode: '0755'
+  loop:
+    - "{{ binary_path | dirname }}"
+    - "{{ cache_dir }}"
+  tags: ['setup']
+
+- name: Build binary for Linux
+  local_action:
+    module: shell
+    cmd: "GOOS=linux GOARCH=amd64 go build -o media-server-linux cmd/media-server/main.go"
+    chdir: "{{ playbook_dir }}/.."
+  run_once: true
+  tags: ['build']
+
+- name: Transfer binary to VM
+  copy:
+    src: "{{ playbook_dir }}/../media-server-linux"
+    dest: "{{ binary_path }}"
+    owner: media-server
+    group: media-server
+    mode: '0755'
+  notify: restart media-server
+  tags: ['deploy']
+
+- name: Install systemd service file
+  template:
+    src: media-server.service.j2
+    dest: /etc/systemd/system/media-server.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart media-server
+  tags: ['setup', 'deploy']
+
+- name: Enable and start media-server service
+  systemd:
+    name: media-server
+    enabled: yes
+    state: started
+  tags: ['deploy']

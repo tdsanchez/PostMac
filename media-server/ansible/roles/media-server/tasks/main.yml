@@ -1,0 +1,25 @@
+---
+# Main tasks for media-server role
+# Platform-agnostic deployment with conditional logic
+
+- name: Include platform-specific variables
+  include_vars: "{{ deployment_type }}.yml"
+  tags: ['always']
+
+- name: Deploy to Multipass VMs
+  include_tasks: multipass.yml
+  when: deployment_type == "multipass"
+  tags: ['multipass', 'deploy']
+
+- name: Deploy to Colima containers
+  include_tasks: colima.yml
+  when: deployment_type == "colima"
+  tags: ['colima', 'deploy']
+
+- name: Configure health checks
+  include_tasks: health_check.yml
+  tags: ['health-check']
+
+- name: Configure monitoring
+  include_tasks: monitoring.yml
+  tags: ['monitoring']

@@ -1,0 +1,54 @@
+---
+# Colima-specific deployment tasks
+# Container deployment: Docker image + Docker Compose
+
+- name: Build Docker image
+  community.docker.docker_image:
+    name: "{{ image_name }}"
+    tag: "{{ image_tag }}"
+    source: build
+    build:
+      path: "{{ playbook_dir }}/.."
+      dockerfile: Dockerfile
+    state: present
+    force_source: yes
+  tags: ['build']
+
+- name: Create Docker network
+  community.docker.docker_network:
+    name: "{{ network_name }}"
+    state: present
+  tags: ['setup']
+
+- name: Create cache volumes
+  community.docker.docker_volume:
+    name: "media-cache-{{ item }}"
+    state: present
+  loop: "{{ range(1, replicas + 1) | list }}"
+  tags: ['setup']
+
+- name: Deploy media server containers
+  community.docker.docker_container:
+    name: "{{ container_name_prefix }}-{{ item }}"
+    image: "{{ image_name }}:{{ image_tag }}"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ network_name }}"
+    ports:
+      - "{{ 8080 + item }}:8080"
+    volumes:
+      - "{{ media_dir }}:/data/media:ro"
+      - "media-cache-{{ item }}:/data/cache"
+    env:
+      MEDIA_DIR: "/data/media"
+      CACHE_DIR: "/data/cache"
+      PORT: "8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+  loop: "{{ range(1, replicas + 1) | list }}"
+  tags: ['deploy']

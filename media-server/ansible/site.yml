@@ -1,0 +1,21 @@
+---
+# Main playbook for media server deployment
+# Supports both Multipass (traditional VMs) and Colima (containers)
+
+- name: Deploy Media Server
+  hosts: media_servers
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - role: media-server
+      tags: ['media-server', 'deploy']
+
+- name: Deploy Load Balancer
+  hosts: load_balancers
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - role: load-balancer
+      tags: ['load-balancer', 'deploy']

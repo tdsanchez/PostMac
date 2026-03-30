@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>ML Training - Media Server</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+			background: #1a1a1a;
+			color: #e0e0e0;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.header {
+			background: #2a2a2a;
+			padding: 15px 20px;
+			border-bottom: 1px solid #333;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.header-left { display: flex; align-items: center; gap: 15px; }
+		.header-title { font-size: 18px; font-weight: 600; }
+		.counter { font-size: 14px; color: #999; }
+
+		.stats-bar {
+			background: rgba(52, 199, 89, 0.1);
+			border-bottom: 2px solid #34C759;
+			padding: 12px 20px;
+			display: flex;
+			gap: 30px;
+			font-size: 13px;
+		}
+
+		.stat-item {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.stat-label { color: #999; }
+		.stat-value {
+			color: #34C759;
+			font-weight: 600;
+			font-family: 'Monaco', 'Menlo', monospace;
+		}
+
+		.main-container {
+			flex: 1;
+			display: grid;
+			grid-template-columns: 1fr 400px;
+			overflow: hidden;
+		}
+
+		.image-panel {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: #000;
+			position: relative;
+		}
+
+		.image-panel img {
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain;
+		}
+
+		.nav-buttons {
+			position: absolute;
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			display: flex;
+			gap: 10px;
+		}
+
+		.nav-btn {
+			background: rgba(0,0,0,0.7);
+			color: white;
+			border: 1px solid #555;
+			padding: 10px 20px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 16px;
+			transition: background 0.2s;
+		}
+
+		.nav-btn:hover {
+			background: rgba(0,0,0,0.9);
+		}
+
+		.decision-panel {
+			background: #2a2a2a;
+			padding: 20px;
+			overflow-y: auto;
+		}
+
+		.section {
+			margin-bottom: 25px;
+		}
+
+		.section-title {
+			font-size: 14px;
+			font-weight: 700;
+			color: #34C759;
+			margin-bottom: 12px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.date-grid {
+			background: rgba(255,255,255,0.05);
+			border-radius: 6px;
+			padding: 12px;
+		}
+
+		.date-row {
+			display: flex;
+			justify-content: space-between;
+			padding: 6px 0;
+			font-family: 'Monaco', 'Menlo', monospace;
+			font-size: 13px;
+		}
+
+		.date-label { color: #999; }
+		.date-value { color: #E0E0E0; font-weight: 500; }
+		.date-value.warning { color: #FF9500; }
+
+		.radio-group {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.radio-option {
+			display: flex;
+			align-items: center;
+			padding: 10px;
+			border-radius: 6px;
+			cursor: pointer;
+			background: rgba(255,255,255,0.03);
+			transition: background 0.2s;
+		}
+
+		.radio-option:hover {
+			background: rgba(255,255,255,0.08);
+		}
+
+		.radio-option input[type="radio"] {
+			margin-right: 10px;
+			cursor: pointer;
+			width: 18px;
+			height: 18px;
+		}
+
+		.radio-option label {
+			cursor: pointer;
+			font-size: 14px;
+			color: #E0E0E0;
+			user-select: none;
+			flex: 1;
+		}
+
+		.radio-option input[type="radio"]:checked + label {
+			color: #34C759;
+			font-weight: 600;
+		}
+
+		.radio-option.model-suggestion {
+			background: rgba(52, 199, 89, 0.1);
+			border: 2px solid #34C759;
+			box-shadow: 0 0 8px rgba(52, 199, 89, 0.3);
+		}
+
+		.filename {
+			font-size: 12px;
+			color: #666;
+			word-break: break-all;
+			margin-top: 15px;
+			padding-top: 15px;
+			border-top: 1px solid #333;
+		}
+
+		.home-link {
+			color: #34C759;
+			text-decoration: none;
+			font-size: 14px;
+			padding: 8px 16px;
+			border: 1px solid #34C759;
+			border-radius: 6px;
+			transition: background 0.2s;
+		}
+
+		.home-link:hover {
+			background: rgba(52, 199, 89, 0.1);
+		}
+
+		.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 10000; align-items: center; justify-content: center; }
+		.modal-overlay.show { display: flex; }
+		.modal { background: #222; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); border: 1px solid #444; }
+		.modal-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; color: #fff; }
+		.modal-message { font-size: 16px; color: #B3B3B3; margin-bottom: 24px; line-height: 1.5; }
+		.modal-buttons { display: flex; gap: 12px; justify-content: flex-end; }
+		.modal-button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+		.modal-button.cancel { background: #444; color: #fff; }
+		.modal-button.cancel:hover { background: #555; }
+		.modal-button.confirm { background: #FF3B30; color: white; }
+		.modal-button.confirm:hover { background: #FF453A; }
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="header-left">
+			<div class="header-title">🤖 ML Training Mode</div>
+			<div class="counter">{{.Index}} / {{.Total}}</div>
+		</div>
+		<div style="display: flex; gap: 10px;">
+			<button onclick="openInGalleryView()" class="home-link" style="cursor: pointer; border: none; background: transparent;">🖼 Open in Gallery View</button>
+			<a href="/" class="home-link">← Back to Gallery</a>
+		</div>
+	</div>
+
+	<div class="stats-bar">
+		<div class="stat-item">
+			<span class="stat-label">Total:</span>
+			<span class="stat-value" id="stats-total">0</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-label">OS Mod:</span>
+			<span class="stat-value"><span id="stats-os-mod">0</span> (<span id="stats-os-mod-pct">0</span>%)</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-label">OS Birth:</span>
+			<span class="stat-value"><span id="stats-os-birth">0</span> (<span id="stats-os-birth-pct">0</span>%)</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-label">EXIF Create:</span>
+			<span class="stat-value"><span id="stats-exif-create">0</span> (<span id="stats-exif-create-pct">0</span>%)</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-label">EXIF Modify:</span>
+			<span class="stat-value"><span id="stats-exif-modify">0</span> (<span id="stats-exif-modify-pct">0</span>%)</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-label">Skip:</span>
+			<span class="stat-value"><span id="stats-skip">0</span> (<span id="stats-skip-pct">0</span>%)</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-label">Status:</span>
+			<span class="stat-value" id="stats-status">LEARNING (need 5+)</span>
+		</div>
+	</div>
+
+	<div class="main-container">
+		<div class="image-panel">
+			<img src="/file/{{.File.Path}}" alt="{{.File.Name}}">
+			<div class="nav-buttons">
+				<button class="nav-btn" onclick="navigate(-1)">← Previous</button>
+				<button class="nav-btn" onclick="navigate(1)">Next →</button>
+			</div>
+		</div>
+
+		<div class="decision-panel">
+			<div class="section">
+				<div class="section-title">📅 Date Analysis</div>
+				<div class="date-grid">
+					<div class="date-row">
+						<span class="date-label">OS Modification:</span>
+						<span class="date-value">{{formatDate .File.OSModTime}}</span>
+					</div>
+					<div class="date-row">
+						<span class="date-label">OS Birth Time:</span>
+						<span class="date-value">{{formatDate .File.OSBirthTime}}</span>
+					</div>
+					<div class="date-row">
+						<span class="date-label">EXIF CreateDate:</span>
+						<span class="date-value{{if not .File.EXIFCreateDate.IsZero}}{{if ne (formatDate .File.EXIFCreateDate) (formatDate .File.EarliestDate)}} warning{{end}}{{end}}">{{formatDate .File.EXIFCreateDate}}</span>
+					</div>
+					<div class="date-row">
+						<span class="date-label">EXIF ModifyDate:</span>
+						<span class="date-value{{if not .File.EXIFModifyDate.IsZero}}{{if ne (formatDate .File.EXIFModifyDate) (formatDate .File.EarliestDate)}} warning{{end}}{{end}}">{{formatDate .File.EXIFModifyDate}}</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- ML Model Suggestion -->
+			<div class="section" id="model-suggestion" style="display: none; background: rgba(52, 199, 89, 0.05); border: 1px solid rgba(52, 199, 89, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+				<div style="font-size: 13px; color: #34C759; font-weight: 600; margin-bottom: 8px;">
+					💡 Model Suggestion
+				</div>
+				<div id="suggestion-content" style="font-size: 14px; color: #E0E0E0;">
+					<span id="suggestion-text"></span>
+					<span id="suggestion-confidence" style="color: #999; font-size: 12px; margin-left: 8px;"></span>
+				</div>
+			</div>
+
+			<div class="section" id="decision-section"
+				data-file-path="{{.File.Path}}"
+				data-os-mod="{{.File.OSModTime.Unix}}"
+				data-os-birth="{{.File.OSBirthTime.Unix}}"
+				data-exif-create="{{.File.EXIFCreateDate.Unix}}"
+				data-exif-modify="{{.File.EXIFModifyDate.Unix}}"
+				data-earliest="{{.File.EarliestDate.Unix}}"
+				data-max-diff="{{.File.MaxDiffHours}}"
+				data-has-exif="{{if not .File.EXIFCreateDate.IsZero}}true{{else}}false{{end}}">
+				<div class="section-title">🤖 Your Decision{{if ne .ExistingDecision "not_chosen"}} <span style="color: #34C759; font-size: 12px;">(Previously saved)</span>{{end}}</div>
+				<div class="radio-group">
+					<div class="radio-option">
+						<input type="radio" id="decision-not-chosen" name="date-decision" value="not_chosen" {{if eq .ExistingDecision "not_chosen"}}checked{{end}}>
+						<label for="decision-not-chosen">⭕ Not Chosen</label>
+					</div>
+					<div class="radio-option">
+						<input type="radio" id="decision-os-mod" name="date-decision" value="use_os_mod" {{if eq .ExistingDecision "use_os_mod"}}checked{{end}}>
+						<label for="decision-os-mod">📅 Use OS Modification Time</label>
+					</div>
+					<div class="radio-option">
+						<input type="radio" id="decision-os-birth" name="date-decision" value="use_os_birth" {{if eq .ExistingDecision "use_os_birth"}}checked{{end}}>
+						<label for="decision-os-birth">🎂 Use OS Birth Time</label>
+					</div>
+					<div class="radio-option">
+						<input type="radio" id="decision-exif-create" name="date-decision" value="use_exif_create" {{if eq .ExistingDecision "use_exif_create"}}checked{{end}}>
+						<label for="decision-exif-create">📸 Use EXIF CreateDate</label>
+					</div>
+					<div class="radio-option">
+						<input type="radio" id="decision-exif-modify" name="date-decision" value="use_exif_modify" {{if eq .ExistingDecision "use_exif_modify"}}checked{{end}}>
+						<label for="decision-exif-modify">✏️ Use EXIF ModifyDate</label>
+					</div>
+					<div class="radio-option">
+						<input type="radio" id="decision-skip" name="date-decision" value="skip" {{if eq .ExistingDecision "skip"}}checked{{end}}>
+						<label for="decision-skip">⏭ Skip/No Change</label>
+					</div>
+				</div>
+			</div>
+
+			<div class="filename">
+				{{.File.Path}}
+			</div>
+		</div>
+	</div>
+
+	<div class="modal-overlay" id="deleteModal">
+		<div class="modal">
+			<div class="modal-title">🗑️ Delete File</div>
+			<div class="modal-message">Move this file to Trash? This will remove it from the library.</div>
+			<div class="modal-buttons">
+				<button class="modal-button cancel" onclick="hideDeleteModal()">Cancel</button>
+				<button class="modal-button confirm" onclick="confirmDelete()">Move to Trash</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const currentIndex = {{.Index}};
+		const totalFiles = {{.Total}};
+		let pendingSave = null; // Track pending save promise
+
+		// Show notification
+		function showNotification(message) {
+			const notification = document.createElement('div');
+			notification.textContent = message;
+			notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: rgba(52, 199, 89, 0.9); color: white; padding: 12px 20px; border-radius: 6px; font-size: 14px; z-index: 10000; box-shadow: 0 2px 8px rgba(0,0,0,0.3);';
+			document.body.appendChild(notification);
+			setTimeout(() => notification.remove(), 2000);
+		}
+
+		// Open current file in gallery view (new tab)
+		function openInGalleryView() {
+			const section = document.getElementById('decision-section');
+			const filePath = section.getAttribute('data-file-path');
+			const category = encodeURIComponent('📅 Needs Date Correction');
+			const file = encodeURIComponent(filePath);
+			const url = `/view/${category}?file=${file}`;
+			window.open(url, '_blank');
+		}
+
+		// Read random mode from URL
+		const urlParams = new URLSearchParams(window.location.search);
+		let randomMode = urlParams.get('random') === 'true';
+
+		// Show notification on page load if random mode is on
+		if (randomMode) {
+			setTimeout(() => showNotification('🎲 Random mode ON'), 100);
+		}
+
+		// Navigation
+		async function navigate(delta) {
+			// Wait for any pending save to complete
+			if (pendingSave) {
+				await pendingSave;
+			}
+
+			let newIndex;
+			if (randomMode) {
+				// Pick random index (different from current)
+				do {
+					newIndex = Math.floor(Math.random() * totalFiles) + 1;
+				} while (newIndex === currentIndex && totalFiles > 1);
+			} else {
+				// Sequential navigation
+				newIndex = currentIndex + delta;
+			}
+
+			if (newIndex >= 1 && newIndex <= totalFiles) {
+				let url = `/train?index=${newIndex}`;
+				if (randomMode) {
+					url += '&random=true';
+				}
+				window.location.href = url;
+			}
+		}
+
+		// Keyboard navigation
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault(); // Stop arrow from changing radio selection
+				navigate(-1);
+			} else if (e.key === 'ArrowRight') {
+				e.preventDefault(); // Stop arrow from changing radio selection
+				navigate(1);
+			} else if (e.key === 'r' || e.key === 'R') {
+				// Toggle random mode
+				randomMode = !randomMode;
+				showNotification(randomMode ? '🎲 Random mode ON' : '⏭️ Sequential mode ON');
+			} else if (e.key === 'x') {
+				// x key: delete file (with modal)
+				e.preventDefault();
+				showDeleteModal();
+			} else if (e.key === 'X') {
+				// Shift+X = instant delete (skip modal for volume operations)
+				e.preventDefault();
+				confirmDelete();
+			} else if (e.key === 'q' || e.key === 'Q') {
+				// QuickLook preview
+				e.preventDefault();
+				quickLookPreview();
+			}
+		});
+
+		// QuickLook preview
+		function quickLookPreview() {
+			const section = document.getElementById('decision-section');
+			const filePath = section.getAttribute('data-file-path');
+
+			fetch('/api/quicklook', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filePath: filePath })
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (data.success) {
+					showNotification('👁 QuickLook opened');
+				}
+			})
+			.catch(err => {
+				console.error('Error launching QuickLook:', err);
+				showNotification('❌ Failed to open QuickLook');
+			});
+		}
+
+		// Delete modal functions
+		function showDeleteModal() {
+			document.getElementById('deleteModal').classList.add('show');
+		}
+
+		function hideDeleteModal() {
+			document.getElementById('deleteModal').classList.remove('show');
+		}
+
+		async function confirmDelete() {
+			try {
+				const section = document.getElementById('decision-section');
+				const filePath = section.getAttribute('data-file-path');
+
+				const response = await fetch('/api/deletefile', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ filePath: filePath })
+				});
+
+				if (response.ok) {
+					// Update modal to show success message
+					const modal = document.querySelector('#deleteModal .modal');
+					modal.innerHTML = `
+						<div class="modal-title">✅ File Deleted</div>
+						<div class="modal-message">File moved to Trash. Navigating to next file...</div>
+					`;
+
+					// Navigate to next file after short delay
+					setTimeout(() => {
+						hideDeleteModal();
+						navigate(1);
+					}, 1000);
+				} else {
+					const data = await response.json();
+					alert('Failed to delete file: ' + (data.error || 'Unknown error'));
+					hideDeleteModal();
+				}
+			} catch (error) {
+				console.error('Error deleting file:', error);
+				alert('Error deleting file: ' + error.message);
+				hideDeleteModal();
+			}
+		}
+
+		// Close delete modal when clicking outside of it
+		document.getElementById('deleteModal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				hideDeleteModal();
+			}
+		});
+
+		// Save decision
+		function saveDateDecision(filePath, decision) {
+			// Store promise so navigation can wait for it
+			pendingSave = (async () => {
+				try {
+					// Get feature data from decision section
+					const section = document.getElementById('decision-section');
+					const osModTime = parseInt(section.getAttribute('data-os-mod'));
+					const osBirthTime = parseInt(section.getAttribute('data-os-birth'));
+					const exifCreateTime = parseInt(section.getAttribute('data-exif-create'));
+					const exifModifyTime = parseInt(section.getAttribute('data-exif-modify'));
+					const earliestTime = parseInt(section.getAttribute('data-earliest'));
+					const maxDiffHours = parseInt(section.getAttribute('data-max-diff'));
+					const hasExif = section.getAttribute('data-has-exif') === 'true';
+
+					const response = await fetch('/api/datedecision', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							filepath: filePath,
+							decision: decision,
+							os_mod_time: osModTime,
+							os_birth_time: osBirthTime,
+							exif_create_time: exifCreateTime,
+							exif_modify_time: exifModifyTime,
+							earliest_time: earliestTime,
+							max_diff_hours: maxDiffHours,
+							has_exif: hasExif
+						})
+					});
+
+					if (!response.ok) {
+						throw new Error('Failed to save decision: ' + response.status);
+					}
+
+					// Refresh stats
+					await refreshDateStats();
+				} catch (error) {
+					alert('Error saving decision: ' + error.message);
+				} finally {
+					pendingSave = null; // Clear after completion
+				}
+			})();
+		}
+
+		// Refresh stats
+		async function refreshDateStats() {
+			try {
+				const response = await fetch('/api/datestats');
+				if (!response.ok) {
+					throw new Error('Failed to fetch stats');
+				}
+
+				const stats = await response.json();
+
+				// Update stats display
+				document.getElementById('stats-total').textContent = stats.TotalDecisions || 0;
+				document.getElementById('stats-os-mod').textContent = stats.UseOSMod || 0;
+				document.getElementById('stats-os-birth').textContent = stats.UseOSBirth || 0;
+				document.getElementById('stats-exif-create').textContent = stats.UseEXIFCreate || 0;
+				document.getElementById('stats-exif-modify').textContent = stats.UseEXIFModify || 0;
+				document.getElementById('stats-skip').textContent = stats.Skip || 0;
+
+				// Update percentages
+				document.getElementById('stats-os-mod-pct').textContent = (stats.UseOSModPct || 0).toFixed(0);
+				document.getElementById('stats-os-birth-pct').textContent = (stats.UseOSBirthPct || 0).toFixed(0);
+				document.getElementById('stats-exif-create-pct').textContent = (stats.UseEXIFCreatePct || 0).toFixed(0);
+				document.getElementById('stats-exif-modify-pct').textContent = (stats.UseEXIFModifyPct || 0).toFixed(0);
+				document.getElementById('stats-skip-pct').textContent = (stats.SkipPct || 0).toFixed(0);
+
+				// Update status message
+				const statusEl = document.getElementById('stats-status');
+				if (stats.TotalDecisions === 0) {
+					statusEl.textContent = 'LEARNING (need 5+)';
+				} else if (stats.TotalDecisions < 5) {
+					statusEl.textContent = `LEARNING (${stats.TotalDecisions}/5)`;
+				} else {
+					statusEl.textContent = 'PREDICTING (ready)';
+				}
+			} catch (error) {
+				console.error('Error refreshing stats:', error);
+			}
+		}
+
+		// Get model prediction
+		async function getModelPrediction() {
+			try {
+				const section = document.getElementById('decision-section');
+				const osModTime = parseInt(section.getAttribute('data-os-mod'));
+				const osBirthTime = parseInt(section.getAttribute('data-os-birth'));
+				const exifCreateTime = parseInt(section.getAttribute('data-exif-create'));
+				const exifModifyTime = parseInt(section.getAttribute('data-exif-modify'));
+				const earliestTime = parseInt(section.getAttribute('data-earliest'));
+				const maxDiffHours = parseInt(section.getAttribute('data-max-diff'));
+				const hasExif = section.getAttribute('data-has-exif') === 'true';
+
+				const response = await fetch('/api/datepredict', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						os_mod_time: osModTime,
+						os_birth_time: osBirthTime,
+						exif_create_time: exifCreateTime,
+						exif_modify_time: exifModifyTime,
+						earliest_time: earliestTime,
+						max_diff_hours: maxDiffHours,
+						has_exif: hasExif
+					})
+				});
+
+				if (!response.ok) {
+					throw new Error('Failed to get prediction');
+				}
+
+				const prediction = await response.json();
+
+				// Show prediction if model is ready
+				if (prediction.IsReady) {
+					if (prediction.Confidence === 1.0) {
+						// 100% confidence: highlight the radio option
+						const decisionIdMap = {
+							'use_os_mod': 'decision-os-mod',
+							'use_os_birth': 'decision-os-birth',
+							'use_exif_create': 'decision-exif-create',
+							'use_exif_modify': 'decision-exif-modify',
+							'skip': 'decision-skip'
+						};
+
+						const radioId = decisionIdMap[prediction.SuggestedDecision];
+						if (radioId) {
+							const radioInput = document.getElementById(radioId);
+							if (radioInput) {
+								// Highlight the radio option's parent div
+								radioInput.closest('.radio-option').classList.add('model-suggestion');
+							}
+						}
+					} else {
+						// <100% confidence: show suggestion box
+						const suggestionBox = document.getElementById('model-suggestion');
+						const suggestionText = document.getElementById('suggestion-text');
+						const suggestionConfidence = document.getElementById('suggestion-confidence');
+
+						const decisionLabels = {
+							'use_os_mod': '📅 Use OS Modification Time',
+							'use_os_birth': '🎂 Use OS Birth Time',
+							'use_exif_create': '📸 Use EXIF CreateDate',
+							'use_exif_modify': '✏️ Use EXIF ModifyDate',
+							'skip': '⏭ Skip/No Change'
+						};
+
+						suggestionText.textContent = decisionLabels[prediction.SuggestedDecision] || prediction.SuggestedDecision;
+						suggestionConfidence.textContent = `(${Math.round(prediction.Confidence * 100)}% confidence, ${prediction.MatchCount} similar examples)`;
+						suggestionBox.style.display = 'block';
+					}
+				}
+			} catch (error) {
+				console.error('Error getting prediction:', error);
+			}
+		}
+
+		// Attach radio button listeners
+		document.addEventListener('DOMContentLoaded', function() {
+			// Load stats and model prediction on page load
+			refreshDateStats();
+			getModelPrediction();
+
+			// Attach listeners to radio buttons
+			const section = document.getElementById('decision-section');
+			const filePath = section.getAttribute('data-file-path');
+			const radios = document.querySelectorAll('input[name="date-decision"]');
+
+			// Track previously selected value
+			let previousSelection = null;
+			radios.forEach(function(radio) {
+				if (radio.checked) {
+					previousSelection = radio.value;
+				}
+			});
+
+			radios.forEach(function(radio) {
+				// Save on change
+				radio.addEventListener('change', function() {
+					if (this.checked) {
+						saveDateDecision(filePath, this.value);
+						previousSelection = this.value;
+					}
+				});
+
+				// Advance on re-click of already selected option
+				radio.addEventListener('click', function() {
+					if (this.value === previousSelection && this.value !== 'not_chosen') {
+						navigate(1);
+					}
+				});
+			});
+		});
+	</script>
+</body>
+</html>
