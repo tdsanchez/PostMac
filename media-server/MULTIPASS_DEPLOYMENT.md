@@ -146,7 +146,7 @@ multipass launch \
 
 ```bash
 # Mount host directory into VM
-multipass mount /Volumes/Nihilus/media media-server-dev:/mnt/media
+multipass mount /Volumes/MyDrive/media media-server-dev:/mnt/media
 
 # Verify mount
 multipass exec media-server-dev -- ls -la /mnt/media
@@ -289,7 +289,7 @@ for i in 1 2 3; do
     22.04
 
   # Mount media files
-  multipass mount /Volumes/Nihilus/media media-server-$i:/mnt/media
+  multipass mount /Volumes/MyDrive/media media-server-$i:/mnt/media
 done
 
 # Launch load balancer VM
@@ -531,7 +531,7 @@ multipass list --format json
 ```bash
 # Unmount and remount
 multipass unmount media-server-1:/mnt/media
-multipass mount /Volumes/Nihilus/media media-server-1:/mnt/media
+multipass mount /Volumes/MyDrive/media media-server-1:/mnt/media
 
 # Check mount inside VM
 multipass exec media-server-1 -- mount | grep /mnt/media

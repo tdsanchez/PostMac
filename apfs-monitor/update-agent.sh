@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 go build -o apfs-monitor main.go
 sudo cp apfs-monitor /usr/local/bin/
 launchctl unload ~/Library/LaunchAgents/com.local.apfs-monitor.plist

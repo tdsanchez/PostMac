@@ -8,12 +8,12 @@
 
 ## Repository Strategy
 
-**Internal Development**: `/Users/tdsanchez/dev/media-server-internal` (this directory)
+**Internal Development**: `/Users/username/dev/media-server-internal` (this directory)
 - Continue development here with no module path changes
 - Keep internal-only documentation and tooling
 - Maintain as working development environment
 
-**Public Release**: `/Users/tdsanchez/dev/PostMac/media-server`
+**Public Release**: `/Users/username/dev/PostMac/media-server`
 - Sync code changes for each Green release
 - Apply module path corrections during sync
 - Exclude internal-only files

@@ -21,7 +21,7 @@
 > - ⚠️ QuickLook initialization issue (workaround: navigate first, then use QuickLook)
 > - ⚠️ **Tag write permission errors** - Seeing intermittent "permission denied" on some files
 > - 📊 Tested with 168,331 media files, 633 tag categories
-> - 📊 **Expanded testing**: ~350k files at /Volumes/Nihilus/scratch (loads in 2 seconds)
+> - 📊 **Expanded testing**: ~350k files at /Volumes/MyDrive/scratch (loads in 2 seconds)
 > - 📊 **Stress testing**: 5 instances, 0.25s slideshow intervals, mixed 10k-100k file datasets
 > - 💾 Cache: 43MB database, loads 168k files in 1 second
 > - 🎯 **Proof of concept**: 350k files in 2 seconds proves Apple's limitations are artificial
@@ -910,7 +910,7 @@ github.com/fsnotify/fsnotify  // Filesystem event monitoring (FSEvents on macOS)
 - **14x speedup** for 168k file library
 
 **Expanded Testing (2025-12-09):**
-- Successfully tested with ~350k files at `/Volumes/Nihilus/scratch`
+- Successfully tested with ~350k files at `/Volumes/MyDrive/scratch`
 - Cache system scales to larger libraries
 - Performance characteristics under evaluation with larger dataset
 
@@ -960,7 +960,7 @@ CREATE TABLE scan_metadata (
 
 **Cache Location:**
 ```
-/Volumes/Nihilus/media/.media-server-cache.db
+/Volumes/MyDrive/media/.media-server-cache.db
 ```
 Hidden file in serve directory (43MB for 168k files)
 
@@ -1177,7 +1177,7 @@ Cache is rebuilt when:
 
 - [ ] **Tag write permission errors on certain files**
   - **Symptom**: Intermittent "permission denied" errors when attempting to write tags to filesystem
-  - **Example error**: `xattr.Set /Volumes/Nihilus/media/scripts/modtag7.sh com.apple.metadata:_kMDItemUserTags: permission denied`
+  - **Example error**: `xattr.Set /Volumes/MyDrive/media/scripts/modtag7.sh com.apple.metadata:_kMDItemUserTags: permission denied`
   - **When discovered**: 2025-12-09 during active usage
   - **Context**: Attempting to adjust tag on plain text file (.sh script)
   - **File permissions**: Checked and appear normal (no obvious permission issues)
@@ -1343,7 +1343,7 @@ Cache is rebuilt when:
   - **When requested**: 2025-12-09
   - **Potential implementation**:
     - Add path display in header or info panel
-    - Show full path: `/Volumes/Nihilus/media/folder/file.jpg`
+    - Show full path: `/Volumes/MyDrive/media/folder/file.jpg`
     - Make path copyable (click to copy to clipboard)
     - Consider showing both breadcrumb navigation AND OS path
   - **Related code**: `cmd/media-server/main_template.html`, `gallery_template.html` (header sections)

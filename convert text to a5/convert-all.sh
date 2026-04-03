@@ -34,7 +34,7 @@ while IFS= read -r -d '' txtfile; do
         echo "[$total] ✗ FAILED: $(basename "$txtfile")"
     fi
 
-done < <(find /Volumes/Plagueis/books -name "*.txt" -type f -print0)
+done < <(find /Volumes/MyDrive/books -name "*.txt" -type f -print0)
 
 echo ""
 echo "========================================="

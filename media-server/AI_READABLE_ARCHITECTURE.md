@@ -227,7 +227,7 @@ Documents evolve with code:
 **Real-time validation** of the performance refactoring:
 
 ```
-2025/12/17 08:58:09 📝 FS event: WRITE /Volumes/Plagueis/Publican.dtBase2/DEVONthink-5.dtMeta
+2025/12/17 08:58:09 📝 FS event: WRITE /Volumes/MyDrive/Publican.dtBase2/DEVONthink-5.dtMeta
 [... 20,000+ rapid WRITE events from DEVONthink ...]
 2025/12/17 08:58:09 🔄 Auto-rescan triggered by filesystem changes...
 2025/12/17 08:58:43 ✅ Auto-rescan completed

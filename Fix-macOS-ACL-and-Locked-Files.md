@@ -73,7 +73,7 @@ fi
 2. **Run with sudo on the target directory:**
    ```bash
    # For a specific directory
-   sudo /tmp/fix_permissions_v2.sh "/Volumes/Vader/Blacker"
+   sudo /tmp/fix_permissions_v2.sh "/Volumes/MyDrive/Blacker"
 
    # For any directory
    sudo /tmp/fix_permissions_v2.sh "/path/to/directory"
@@ -158,12 +158,12 @@ Old software installers (like "Microsoft Office 4.2.1") may have both `uchg` fla
 
 ```bash
 # Run on entire volume subdirectory
-sudo /tmp/fix_permissions_v2.sh "/Volumes/Vader/Blacker"
+sudo /tmp/fix_permissions_v2.sh "/Volumes/MyDrive/Blacker"
 
 # This catches ALL subdirectories:
-# - /Volumes/Vader/Blacker/Articula/
-# - /Volumes/Vader/Blacker/Deca/
-# - /Volumes/Vader/Blacker/Octogee Remnants/
+# - /Volumes/MyDrive/Blacker/Articula/
+# - /Volumes/MyDrive/Blacker/Deca/
+# - /Volumes/MyDrive/Blacker/Octogee Remnants/
 # And all files within them
 ```
 

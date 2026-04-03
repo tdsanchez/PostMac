@@ -551,8 +551,8 @@ Ideas for additional tools in this tree:
 
 1. **Create project directory**:
    ```bash
-   mkdir /Users/tdsanchez/dev/new-project
-   cd /Users/tdsanchez/dev/new-project
+   mkdir /Users/username/dev/new-project
+   cd /Users/username/dev/new-project
    ```
 
 2. **Initialize with documentation**:
@@ -567,7 +567,7 @@ Ideas for additional tools in this tree:
 
 4. **Update dev-tree documentation**:
    - Add project to this `PROJECT_INDEX.md`
-   - Update `/Users/tdsanchez/dev/README.md`
+   - Update `/Users/username/dev/README.md`
    - Document in appropriate sections
 
 5. **Follow methodology**:

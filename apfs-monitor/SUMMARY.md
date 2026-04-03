@@ -71,7 +71,7 @@ tail -20 /var/log/apfs-monitor.log
 
 **Update after code changes**:
 ```bash
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 sudo bash update-daemon.sh
 ```
 

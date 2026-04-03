@@ -56,7 +56,7 @@ sudo launchctl list | grep apfs-monitor
 ## Update After Code Changes
 
 ```bash
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 sudo bash update-daemon.sh
 ```
 
@@ -87,7 +87,7 @@ df -h
 tmutil status
 
 # Find large files
-sudo du -h -d 1 /System/Volumes/Bane | sort -h | tail -20
+sudo du -h -d 1 /System/Volumes/MyDrive | sort -h | tail -20
 
 # List TM snapshots
 tmutil listlocalsnapshots /
@@ -101,8 +101,8 @@ tmutil listlocalsnapshots /
 Binary:       /usr/local/bin/apfs-monitor
 Config:       /Library/LaunchDaemons/com.local.apfs-monitor.plist
 Logs:         /var/log/apfs-monitor.log
-Source:       /Users/tdsanchez/apfs-monitor/
-Update:       /Users/tdsanchez/apfs-monitor/update-daemon.sh
+Source:       /Users/username/apfs-monitor/
+Update:       /Users/username/apfs-monitor/update-daemon.sh
 ```
 
 ---
@@ -127,7 +127,7 @@ Update:       /Users/tdsanchez/apfs-monitor/update-daemon.sh
 ## Uninstall
 
 ```bash
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 ./uninstall.sh
 ```
 

@@ -63,7 +63,7 @@ Add to model system card:
 
 **Example**:
 - Bad: `sudo cp apfs-monitor /usr/local/bin/`
-- Good: `sudo cp /Users/tdsanchez/apfs-monitor/apfs-monitor /usr/local/bin/`
+- Good: `sudo cp /Users/username/apfs-monitor/apfs-monitor /usr/local/bin/`
 
 ### Directory State Errors
 **Issue**: User experienced `getcwd` errors due to directory/filesystem state issues during APFS space crisis.

@@ -107,7 +107,7 @@ Logs:          /var/log/apfs-monitor.log (active)
 
 ### Files Created
 
-#### Repository Files (/Users/tdsanchez/apfs-monitor/)
+#### Repository Files (/Users/username/apfs-monitor/)
 
 **Source Code:**
 ```
@@ -170,10 +170,10 @@ com.local.apfs-monitor.plist         # LaunchDaemon template
 
 **User Home Directory:**
 ```
-/Users/tdsanchez/apfs-space-issue-documentation.md
+/Users/username/apfs-space-issue-documentation.md
                                      # Original incident report
 
-/Users/tdsanchez/APFS-MONITORING-INDEX.md
+/Users/username/APFS-MONITORING-INDEX.md
                                      # Quick access documentation index
 ```
 
@@ -224,7 +224,7 @@ sudo launchctl list | grep apfs-monitor
 ### Update Monitor After Code Changes
 
 ```bash
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 sudo bash update-daemon.sh
 ```
 
@@ -268,7 +268,7 @@ You have time to clean up proactively. Don't panic.
 1. **Check what's using space**:
    ```bash
    diskutil apfs list
-   sudo du -h -d 1 /System/Volumes/Bane | sort -h | tail -20
+   sudo du -h -d 1 /System/Volumes/MyDrive | sort -h | tail -20
    ```
 
 2. **Safe cleanup options** (no backup needed first):
@@ -356,10 +356,10 @@ tmutil deletelocalsnapshots /
 
 ```bash
 # Top-level directories by size
-sudo du -h -d 1 /System/Volumes/Bane | sort -h | tail -20
+sudo du -h -d 1 /System/Volumes/MyDrive | sort -h | tail -20
 
 # Find files larger than 1GB
-sudo find /System/Volumes/Bane -type f -size +1G 2>/dev/null
+sudo find /System/Volumes/MyDrive -type f -size +1G 2>/dev/null
 
 # Find largest files in home directory
 du -ha ~/ | sort -h | tail -50
@@ -431,7 +431,7 @@ cat /var/log/apfs-monitor.err
 /usr/local/bin/apfs-monitor
 
 # Rebuild and reinstall
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 sudo bash update-daemon.sh
 ```
 
@@ -523,14 +523,14 @@ tail -100 /var/log/apfs-monitor.log
 ## Uninstallation
 
 ```bash
-cd /Users/tdsanchez/apfs-monitor
+cd /Users/username/apfs-monitor
 ./uninstall.sh
 
 # Manually remove logs if desired
 sudo rm /var/log/apfs-monitor.*
 
 # Remove project directory
-rm -rf /Users/tdsanchez/apfs-monitor
+rm -rf /Users/username/apfs-monitor
 ```
 
 ---
@@ -623,8 +623,8 @@ tail -f /var/log/apfs-monitor.log
 Monitor binary:  /usr/local/bin/apfs-monitor
 Daemon config:   /Library/LaunchDaemons/com.local.apfs-monitor.plist
 Logs:            /var/log/apfs-monitor.log
-Source code:     /Users/tdsanchez/apfs-monitor/
-Update script:   /Users/tdsanchez/apfs-monitor/update-daemon.sh
+Source code:     /Users/username/apfs-monitor/
+Update script:   /Users/username/apfs-monitor/update-daemon.sh
 ```
 
 ### Key Thresholds (Current)

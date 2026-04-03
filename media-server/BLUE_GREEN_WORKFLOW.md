@@ -29,7 +29,7 @@ This repository follows a **blue/green workflow** designed to separate private d
 ┌─────────────────────────────────────────┐
 │   media-server-internal (BLUE)          │
 │   This repository - Private dev         │
-│   Location: /Users/tdsanchez/dev/       │
+│   Location: /Users/username/dev/       │
 │           media-server-internal         │
 └──────────────┬──────────────────────────┘
                │
@@ -49,11 +49,11 @@ This repository follows a **blue/green workflow** designed to separate private d
 
 ### Blue Environment (Private Development)
 
-**Location**: `/Users/tdsanchez/dev/media-server-internal` (this repository)
+**Location**: `/Users/username/dev/media-server-internal` (this repository)
 
 **Characteristics**:
 - ✅ Full git history preserved
-- ✅ Personal paths and context (`/Volumes/Vader`, etc.)
+- ✅ Personal paths and context (`/Volumes/MyDrive`, etc.)
 - ✅ Work-in-progress features and experiments
 - ✅ Claude collaboration sessions with full context
 - ✅ Trunk-based development optimized for LLM reasoning
@@ -185,10 +185,10 @@ cat ../.gitmodules 2>/dev/null
 
 | Blue (Private) | Green (Public) | Context |
 |---------------|----------------|---------|
-| `/Volumes/Vader/*` | `/Volumes/Nihilus/media` | Personal volume name |
-| `/Volumes/Dooku/*` | `/Volumes/Nihilus/media` | Personal library |
-| `/Volumes/Sion/*` | `/Volumes/Nihilus/media` | Personal volume |
-| `/Users/tdsanchez/*` | `/Users/user/*` or removed | Personal user path |
+| `/Volumes/MyDrive/*` | `/Volumes/MyDrive/media` | Personal volume name |
+| `/Volumes/MyDrive/*` | `/Volumes/MyDrive/media` | Personal library |
+| `/Volumes/MyDrive/*` | `/Volumes/MyDrive/media` | Personal volume |
+| `/Users/username/*` | `/Users/user/*` or removed | Personal user path |
 | `DigiKam Fixed/` | `photos/` | Personal folder name |
 | Any personal folder names | Generic equivalents | Maintain semantic meaning |
 
@@ -276,19 +276,19 @@ cat ../.gitmodules 2>/dev/null
 **Blue Environment (Development)**:
 ```bash
 # Working in media-server-internal (Blue)
-cd /Users/tdsanchez/dev/media-server-internal
+cd /Users/username/dev/media-server-internal
 
 # Develop feature with Claude
 # - Use real paths in examples
-# - Test with actual data at /Volumes/Vader/media
+# - Test with actual data at /Volumes/MyDrive/media
 # - Commit with natural language messages
 
 git add .
 git commit -m "feat: add beaming feature for rapid file organization
 
 Implements [B] keyboard shortcut to move/copy files to predefined
-target directory. Tested with /Volumes/Vader/media →
-/Volumes/Dooku/sorted workflow.
+target directory. Tested with /Volumes/MyDrive/media →
+/Volumes/MyDrive/sorted workflow.
 
 Uses existing cache update mechanism, integrates with FSEvents."
 
@@ -298,7 +298,7 @@ Uses existing cache update mechanism, integrates with FSEvents."
 **Green Environment (Public Release)**:
 ```bash
 # When ready to release publicly
-cd /Users/tdsanchez/dev/media-server-internal
+cd /Users/username/dev/media-server-internal
 
 # Run pre-release checklist
 # - Sanitize all paths

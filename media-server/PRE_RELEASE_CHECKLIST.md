@@ -62,8 +62,8 @@ grep -rn "/home/[^/]*" --include="*.md" --include="*.go" /path/to/repo | grep -v
 ```
 
 **Sanitization Map**:
-- `/Volumes/Vader/*` → `/Volumes/Nihilus/media`
-- `/Volumes/<PersonalName>/*` → `/Volumes/Nihilus/media`
+- `/Volumes/MyDrive/*` → `/Volumes/MyDrive/media`
+- `/Volumes/<PersonalName>/*` → `/Volumes/MyDrive/media`
 - `/Users/<username>/*` → `/Users/user/*` or remove entirely
 - `/home/<username>/*` → `/home/user/*` or remove entirely
 
@@ -175,15 +175,15 @@ git diff HEAD~10..HEAD
 ### Volume Paths
 | Original Pattern | Replacement |
 |-----------------|-------------|
-| `/Volumes/Vader/*` | `/Volumes/Nihilus/media` |
-| `/Volumes/Dooku/*` | `/Volumes/Nihilus/media` |
-| `/Volumes/Sion/*` | `/Volumes/Nihilus/media` |
-| `/Volumes/<AnyPersonalName>/*` | `/Volumes/Nihilus/media` |
+| `/Volumes/MyDrive/*` | `/Volumes/MyDrive/media` |
+| `/Volumes/MyDrive/*` | `/Volumes/MyDrive/media` |
+| `/Volumes/MyDrive/*` | `/Volumes/MyDrive/media` |
+| `/Volumes/<AnyPersonalName>/*` | `/Volumes/MyDrive/media` |
 
 ### User Paths
 | Original Pattern | Replacement |
 |-----------------|-------------|
-| `/Users/tdsanchez/*` | Remove or use `/Users/user/*` |
+| `/Users/username/*` | Remove or use `/Users/user/*` |
 | `/Users/<username>/*` | Remove or use `/Users/user/*` |
 | `/home/<username>/*` | Remove or use `/home/user/*` |
 

@@ -1,7 +1,7 @@
 # Git Workflow - Dev Tree with Submodules
 
 **Purpose**: Guide for working with parent dev tree repo and subproject git repositories
-**Structure**: Parent repo at `/Users/tdsanchez/dev` with git submodules for each project
+**Structure**: Parent repo at `/Users/username/dev` with git submodules for each project
 **Last Updated**: 2025-12-12
 
 ---
@@ -9,7 +9,7 @@
 ## Repository Structure
 
 ```
-/Users/tdsanchez/dev/              # Parent repo (this level)
+/Users/username/dev/              # Parent repo (this level)
 ├── .git/                          # Parent repo git database
 ├── .gitmodules                    # Submodule configuration
 ├── README.md                      # Dev tree documentation
@@ -48,7 +48,7 @@
 
 ```bash
 # 1. Navigate to subproject
-cd /Users/tdsanchez/dev/media_server
+cd /Users/username/dev/media_server
 
 # 2. Work normally - it's a regular git repo
 git status
@@ -57,7 +57,7 @@ git add changed_files
 git commit -m "Add new feature"
 
 # 3. The parent repo notices the submodule changed
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git status
 # Output: modified:   media_server (new commits)
 
@@ -72,7 +72,7 @@ git commit -m "Update media_server to include [feature]"
 
 ```bash
 # 1. Navigate to parent repo
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 
 # 2. Edit documentation
 nano README.md
@@ -89,7 +89,7 @@ git commit -m "Update documentation for new project"
 
 ```bash
 # 1. Create and initialize new project
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 mkdir new-project
 cd new-project
 git init
@@ -98,7 +98,7 @@ git add .
 git commit -m "Initial commit for new-project"
 
 # 2. Add as submodule in parent repo
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git submodule add ./new-project new-project
 git add .gitmodules new-project
 git commit -m "Add new-project as submodule"
@@ -114,7 +114,7 @@ git commit -m "Document new-project in dev tree"
 
 ```bash
 # Parent repo status
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git status
 
 # Check each submodule status
@@ -204,7 +204,7 @@ git commit -m "Update media_server: fix random mode bug"
 ### Scenario 2: Add New Dev Tree Documentation
 
 ```bash
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 nano NEW_GUIDE.md
 git add NEW_GUIDE.md
 git commit -m "Add guide for [topic]"
@@ -220,7 +220,7 @@ cd ../apfs-monitor
 # ... make changes, commit ...
 
 # Update parent repo to track new commits
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git add media_server apfs-monitor
 git commit -m "Update both projects: [description]"
 
@@ -262,7 +262,7 @@ When you `git add media_server`, you're updating which commit the parent tracks.
 
 ```bash
 # Parent repo history (dev tree level changes)
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git log
 
 # media_server history (project changes)
@@ -280,7 +280,7 @@ These are **completely independent** histories.
 
 ```bash
 # Check what commit parent is tracking
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git submodule status
 
 # Output shows: commit hash, path, and branch
@@ -415,7 +415,7 @@ git submodule update --init media_server
 ### Morning: Check What Changed
 
 ```bash
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 
 # Check parent repo
 git status
@@ -453,7 +453,7 @@ git commit -m "media_server: fix cache invalidation"
 ### End of Day: Review What Was Done
 
 ```bash
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 
 # See parent repo changes
 git log --oneline --since="1 day ago"
@@ -474,7 +474,7 @@ git log --online --since="1 day ago"
 
 ```bash
 # Add remote to parent
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git remote add origin git@github.com:user/dev-tree.git
 git push -u origin main
 
@@ -510,7 +510,7 @@ git commit -m "Track media_server feature-branch"
 
 ```bash
 # See what changed in parent
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git diff
 
 # See what changed in specific submodule
@@ -531,7 +531,7 @@ This git structure supports the AI-native development workflow:
 ### Session Start
 ```bash
 # Load dev tree context
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 cat README.md PROJECT_INDEX.md
 
 # Load specific project context
@@ -572,7 +572,7 @@ git commit -m "media_server: implement pagination (handles 168k+ files)"
 ### Session End
 ```bash
 # Review all changes
-cd /Users/tdsanchez/dev
+cd /Users/username/dev
 git log --oneline --since="1 day ago"
 git submodule foreach 'git log --oneline --since="1 day ago"'
 
@@ -625,6 +625,6 @@ git submodule add ./path name     # Add new submodule
 ---
 
 **Last Updated**: 2025-12-12
-**Parent Repo**: /Users/tdsanchez/dev
+**Parent Repo**: /Users/username/dev
 **Submodules**: media_server, apfs-monitor
 **Methodology**: AI-native development with comprehensive system cards

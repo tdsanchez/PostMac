@@ -153,9 +153,9 @@ Create a monitoring daemon that:
 4. ⏳ Evaluate additional volumes for HFS+ conversion
 
 ### Documentation Created
-- `/Users/tdsanchez/apfs-monitor/MASTER-DOCUMENTATION.md` - Complete reference
-- `/Users/tdsanchez/apfs-monitor/README.md` - Tool documentation
-- `/Users/tdsanchez/apfs-monitor/QUICKSTART.md` - Installation guide
+- `/Users/username/apfs-monitor/MASTER-DOCUMENTATION.md` - Complete reference
+- `/Users/username/apfs-monitor/README.md` - Tool documentation
+- `/Users/username/apfs-monitor/QUICKSTART.md` - Installation guide
 - This file - Incident report and analysis
 
 ### Success Metrics

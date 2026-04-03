@@ -51,7 +51,7 @@ go build -o media-server cmd/media-server/main.go
 ./media-server
 
 # Run with custom settings
-./media-server --dir=/Volumes/Maul --port=9090
+./media-server --dir=/Volumes/MyDrive --port=9090
 
 # Build and launch browser automatically
 ./build_server.sh

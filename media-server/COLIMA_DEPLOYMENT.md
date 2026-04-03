@@ -218,7 +218,7 @@ docker images | grep media-server
 ```bash
 docker run -d \
   --name media-server \
-  -v /Volumes/Nihilus/media:/data/media:ro \
+  -v /Volumes/MyDrive/media:/data/media:ro \
   -p 8080:8080 \
   media-server:latest
 ```
@@ -229,7 +229,7 @@ docker run -d \
 docker volume create media-storage
 
 # Copy data (one-time)
-docker run --rm -v /Volumes/Nihilus/media:/source:ro \
+docker run --rm -v /Volumes/MyDrive/media:/source:ro \
   -v media-storage:/dest \
   alpine cp -r /source/. /dest/
 
@@ -300,7 +300,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - /Volumes/Nihilus/media:/data/media:ro
+      - /Volumes/MyDrive/media:/data/media:ro
       - media-cache:/data/cache
     environment:
       - MEDIA_DIR=/data/media

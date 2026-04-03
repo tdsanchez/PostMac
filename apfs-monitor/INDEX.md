@@ -69,7 +69,7 @@ tail -f /var/log/apfs-monitor.log
 ## Project Structure
 
 ```
-/Users/tdsanchez/
+/Users/username/
 ├── APFS-MONITORING-INDEX.md          (this file)
 ├── apfs-space-issue-documentation.md (incident report)
 └── apfs-monitor/
