@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -415,17 +414,8 @@ func HandleDeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Move file to Trash using osascript (macOS-specific)
-	script := fmt.Sprintf(`
-		set filepath to POSIX file "%s"
-		tell application "Finder"
-			move filepath to trash
-		end tell
-	`, cleanPath)
-
-	cmd := exec.Command("osascript", "-e", script)
-	if err := cmd.Run(); err != nil {
-		log.Printf("❌ Delete failed: osascript error: %v", err)
+	if err := trashFile(cleanPath); err != nil {
+		log.Printf("❌ Delete failed: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,
@@ -489,21 +479,7 @@ func HandleQuickLook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
-		cmd := exec.Command("sh", "-c", fmt.Sprintf("open -R '%s' > /dev/null 2>&1", cleanPath))
-		cmd2 := exec.Command("qlmanage", "-p", cleanPath)
-
-		cmd.Run()
-		time.Sleep(500 * time.Millisecond)
-
-		cmd2.Run()
-		time.Sleep(1500 * time.Millisecond)
-
-		script := `tell application "System Events" to set frontmost of first process whose name is "qlmanage" to true`
-		activateCmd := exec.Command("osascript", "-e", script)
-		activateCmd.Run()
-		time.Sleep(1500 * time.Millisecond)
-	}()
+	go revealAndPreview(cleanPath)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
@@ -514,8 +490,8 @@ func HandleConvert(w http.ResponseWriter, r *http.Request) {
 	absPath := strings.TrimPrefix(r.URL.Path, "/api/convert/")
 	absPath, _ = url.QueryUnescape(absPath)
 
-	// Restore leading slash for absolute paths (browser normalizes /api/convert//Volumes to /api/convert/Volumes)
-	if !filepath.IsAbs(absPath) && (strings.HasPrefix(absPath, "Volumes/") || strings.HasPrefix(absPath, "Users/")) {
+	// Restore leading slash for absolute paths (browser normalizes double-slash away)
+	if !filepath.IsAbs(absPath) && len(absPath) > 0 && absPath[0] != '.' {
 		absPath = "/" + absPath
 	}
 

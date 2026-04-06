@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/rwcarlsen/goexif/exif"
@@ -525,16 +524,6 @@ func analyzeDateMetadata(filePath string, info os.FileInfo) (osModTime, osBirthT
 	return osModTime, osBirthTime, exifCreateDate, exifModifyDate, earliestDate, needsCorrection, largeDiscrepancy, maxDiffHours
 }
 
-// getBirthTime gets the creation time (birth time) of a file on macOS
-func getBirthTime(info os.FileInfo) time.Time {
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	if !ok {
-		// Fallback to ModTime if we can't get birth time
-		return info.ModTime()
-	}
-	// On macOS, Birthtimespec contains the file creation time
-	return time.Unix(stat.Birthtimespec.Sec, stat.Birthtimespec.Nsec)
-}
 
 // LoadOrScan loads files from cache or processes stdin paths
 // SQLite is the source of truth - instant startup from cache

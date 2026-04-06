@@ -1,4 +1,4 @@
-module github.com/tdsanchez/PostMac/media-server
+module github.com/tdsanchez/PostMac
 
 go 1.22
 

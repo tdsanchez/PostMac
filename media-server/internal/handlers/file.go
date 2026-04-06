@@ -26,9 +26,9 @@ func HandleFile(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("🔍 HandleFile: after URL decode: %s", absPath)
 
-	// Fix for browser normalizing /file//Volumes/ to /file/Volumes/ (or /file//Users/ to /file/Users/)
-	// If path starts with "Volumes/" or "Users/" but isn't absolute, it's a file that lost its leading /
-	if !filepath.IsAbs(absPath) && (strings.HasPrefix(absPath, "Volumes/") || strings.HasPrefix(absPath, "Users/")) {
+	// Fix for browser double-slash normalization: /file//absolute/path becomes /file/absolute/path.
+	// Restore the leading slash if the path looks like an absolute path missing its /.
+	if !filepath.IsAbs(absPath) && len(absPath) > 0 && absPath[0] != '.' {
 		absPath = "/" + absPath
 		log.Printf("🔍 HandleFile: restored leading /: %s", absPath)
 	}

@@ -11,6 +11,16 @@ type FileInfo struct {
 	Comment string // Finder comment
 	Created time.Time
 	Size    int64 // File size in bytes
+
+	// Date analysis fields for ML date-correction feature
+	OSModTime           time.Time
+	OSBirthTime         time.Time
+	EXIFCreateDate      time.Time
+	EXIFModifyDate      time.Time
+	EarliestDate        time.Time
+	NeedsDateCorrection bool
+	LargeDiscrepancy    bool
+	MaxDiffHours        int
 }
 
 // CategoryPreview represents a tag category with preview information
