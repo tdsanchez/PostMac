@@ -106,8 +106,8 @@ func resolveSSHFSPath(localPath string) (host string, remotePath string, err err
 			continue
 		}
 
-		source := fields[0] // e.g. yaquazi@192.168.1.190:/Users/yaquazi/Desktop/webarch_html
-		mountPoint := fields[1] // e.g. /home/yaquazi/mnt/datube-full
+		source := fields[0] // e.g. user@host:/remote/path
+		mountPoint := fields[1] // e.g. /home/user/mnt/mountpoint
 
 		if strings.HasPrefix(localPath, mountPoint+"/") || localPath == mountPoint {
 			if len(mountPoint) > len(bestMount) {
@@ -130,8 +130,8 @@ func resolveSSHFSPath(localPath string) (host string, remotePath string, err err
 		return "", "", fmt.Errorf("unexpected SSHFS source format: %s", bestSource)
 	}
 
-	host = bestSource[:colonIdx]       // e.g. yaquazi@192.168.1.190
-	remoteBase := bestSource[colonIdx+1:] // e.g. /Users/yaquazi/Desktop/webarch_html
+	host = bestSource[:colonIdx]          // e.g. user@host
+	remoteBase := bestSource[colonIdx+1:] // e.g. /remote/base/path
 
 	// Map local path to remote path
 	relPath := strings.TrimPrefix(localPath, bestMount)
