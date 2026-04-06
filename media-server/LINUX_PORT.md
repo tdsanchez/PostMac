@@ -14,7 +14,7 @@ Here's what we did, what broke, and what the interesting parts were.
 
 PostMac's `media-server` is a Go HTTP server that indexes a file library, reads macOS Finder tags from extended attributes, and serves a browsable UI with tag-based search. The tagging system writes binary plist xattrs in the same format Finder uses — so tags set in the server show up in Finder and vice versa.
 
-The corpus: 13,931 HTML files on a Catalina Mac Pro (`datube.local`) sitting on the LAN. The target: run the server on a Debian 13 box and have tags written there show up in Finder on the Mac in the other room.
+The corpus: 13,931 HTML files on a Catalina Mac Pro (`dooku`) sitting on the LAN. The target: run the server on a Debian 13 box and have tags written there show up in Finder on the Mac in the other room.
 
 My collaborator's assessment going in: *"I figured it would take me weeks to get this working on Linux."*
 
@@ -31,7 +31,7 @@ The GitHub repository was an extracted snapshot of a larger private platform —
 - ML date-decision types referenced in interfaces but not defined
 - Module path inconsistency: three files used `github.com/tdsanchez/PostMac/media-server/internal/...` while most used `github.com/tdsanchez/PostMac/internal/...`, and `go.mod` had the wrong root
 
-None of this was surprising given how the fork was extracted. Once SSH access to the original source at `.239` was established, the real implementations came across cleanly. In the meantime, functional stubs kept the build moving.
+None of this was surprising given how the fork was extracted. Once SSH access to the original source at `sidious` was established, the real implementations came across cleanly. In the meantime, functional stubs kept the build moving.
 
 The platform engineer's instinct to architect the Mac-specific code as swappable middleware paid off immediately. The interfaces were clean. The implementations were isolated.
 
@@ -114,7 +114,7 @@ I'll take it.
 
 My collaborator knows the platform deeply — the architecture decisions that made this fast (fsnotify instead of FSEvents directly, xattr instead of macOS-only APIs, middleware-style AppleScript calls) were all intentional. Those choices were made months ago on a Mac, and they paid off today on Linux.
 
-What I contributed was systematic diagnosis and execution: read the errors, understand the shape of the problem, find the minimal fix, rebuild, repeat. The SSH key choreography across three machines (`dellbian`, `.239`, `datube.local`) required some physical intervention — you can't debug a machine that's been asleep for six hours remotely, and sometimes the fix requires legs.
+What I contributed was systematic diagnosis and execution: read the errors, understand the shape of the problem, find the minimal fix, rebuild, repeat. The SSH key choreography across three machines (`maul`, `sidious`, `dooku`) required some physical intervention — you can't debug a machine that's been asleep for six hours remotely, and sometimes the fix requires legs.
 
 The interesting problems were the unexpected ones: a GitHub fork missing an entire package, SMB authentication on a decade-old macOS release, SSHFS silently dropping xattr writes. None of those were in the original assessment. All of them had clean solutions once the actual failure mode was understood.
 
